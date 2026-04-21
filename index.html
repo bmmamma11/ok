@@ -3,56 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CardView Group Chat</title>
+    <title>Fixed Bottom Chat</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #dfe5eb; display: flex; flex-direction: column; height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #dfe5eb; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        header { background: #075e54; color: white; padding: 12px; text-align: center; font-size: 1.1em; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
+        header { background: #075e54; color: white; padding: 12px; text-align: center; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 100; }
 
-        /* Chat Container */
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        /* စာတန်းများပြမည့်နေရာကို Scroll ဖြစ်အောင်လုပ်ထားသည် */
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px; }
         
-        /* Message CardView Style */
-        .msg { 
-            max-width: 80%; /* စာဘောင်ကို ပိုကျဉ်းလိုက်တာပါ */
-            padding: 10px 14px; 
-            border-radius: 15px; 
-            font-size: 0.92em; 
-            line-height: 1.4; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08); /* CardView Shadow */
-            position: relative;
-            transition: 0.3s;
-        }
-
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 15px; font-size: 0.92em; line-height: 1.4; box-shadow: 0 4px 6px rgba(0,0,0,0.08); position: relative; }
         .user-name { font-weight: bold; font-size: 0.75em; margin-bottom: 4px; display: block; }
         
-        /* ကိုယ့်ဘက်ကစာ (ညာဘက် Card) */
-        .my-msg { 
-            align-self: flex-end; 
-            background: #ffffff; 
-            border: 1px solid #d1d1d1;
-            border-bottom-right-radius: 2px;
-            color: #333;
-        }
+        .my-msg { align-self: flex-end; background: #ffffff; border: 1px solid #d1d1d1; border-bottom-right-radius: 2px; color: #333; }
         .my-msg .user-name { color: #075e54; text-align: right; }
 
-        /* သူများဘက်ကစာ (ဘယ်ဘက် Card) */
-        .other-msg { 
-            align-self: flex-start; 
-            background: #075e54; 
-            color: white;
-            border-bottom-left-radius: 2px;
-        }
+        .other-msg { align-self: flex-start; background: #075e54; color: white; border-bottom-left-radius: 2px; }
         .other-msg .user-name { color: #80cbc4; }
 
-        /* Input Bar */
-        .input-area { padding: 12px; background: white; display: flex; align-items: center; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-        input { flex: 1; padding: 12px 18px; border: 1px solid #e0e0e0; border-radius: 30px; outline: none; background: #f8f9fa; transition: 0.2s; }
-        input:focus { border-color: #075e54; background: white; }
-        
-        button { background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        button:hover { background: #0a7c6e; }
+        /* စာရိုက်သည့်နေရာကို အောက်ခြေမှာ အသေကပ်ထားသည် */
+        .input-area { position: fixed; bottom: 0; width: 100%; padding: 12px; background: white; display: flex; align-items: center; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        input { flex: 1; padding: 12px 18px; border: 1px solid #e0e0e0; border-radius: 30px; outline: none; background: #f8f9fa; }
+        button { background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
     </style>
 </head>
 <body>
@@ -107,7 +80,8 @@
                 msgDiv.innerHTML = `<span class="user-name">${d.u}</span><div>${d.t}</div>`;
                 chatBox.appendChild(msgDiv);
             });
-            chatBox.scrollTop = chatBox.scrollHeight;
+            // စာအသစ်ဝင်ရင် အောက်ဆုံးကို အလိုအလျောက် ဆွဲချပေးသည်
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
         });
     </script>
 </body>

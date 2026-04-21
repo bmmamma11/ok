@@ -1,91 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Group Chat</title>
+    <title>Firebase Chat</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; background: #e5ddd5; }
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
-        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; background: white; max-width: 80%; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .user-name { font-weight: bold; color: #075e54; font-size: 0.8em; margin-bottom: 5px; }
-        .input-area { padding: 10px; display: flex; background: #f0f0f0; border-top: 1px solid #ccc; }
-        input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
-        button { padding: 10px 20px; margin-left: 5px; background: #075e54; color: white; border: none; border-radius: 20px; cursor: pointer; }
+        body { font-family: sans-serif; margin: 0; background: #ece5dd; display: flex; flex-direction: column; height: 100vh; }
+        #chat { flex: 1; overflow-y: auto; padding: 15px; }
+        .m { background: white; padding: 8px; margin-bottom: 8px; border-radius: 5px; }
+        .u { font-weight: bold; color: green; font-size: 0.8em; }
+        .input { padding: 10px; display: flex; background: #f0f0f0; }
+        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
     </style>
 </head>
 <body>
-
-    <div id="chat-box"></div>
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="စာရိုက်ပါ...">
-        <button id="sendBtn">ပို့မည်</button>
+    <div id="chat"></div>
+    <div class="input">
+        <input type="text" id="msg" placeholder="စာရိုက်ပါ...">
+        <button onclick="send()">ပို့မည်</button>
     </div>
 
+    <!-- Firebase Scripts -->
     <script type="module">
-        // ၁။ Library Link များကို .js အဆုံးသတ်ဖြင့် အမှန်ကန်ဆုံး ပြင်ထားပါသည်
-        import { initializeApp } from "https://gstatic.com/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com/firebase-app.js";
+        import { initializeApp } from "https://gstatic.com";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com";
 
-        // ၂။ သင့်ရဲ့ Firebase Config
         const firebaseConfig = {
-            apiKey: "AIzaSyDDqLaXkGPKN-Dohja-hs7v632fxIPufU8",
+            apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
             projectId: "laoo-68bb5",
             storageBucket: "laoo-68bb5.firebasestorage.app",
-            messagingSenderId: "487533047054",
-            appId: "1:487533047054:web:ed2a0badb70d279fa17b5f",
-            measurementId: "G-00NZ96P4DS"
+            messagingSenderId: "467533047034",
+            appId: "1:467533047034:web:ed2a0badb70d279fa17b5f"
         };
 
-        // Firebase စတင်ခြင်း
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ၃။ နာမည်တောင်းခြင်း Logic
-        let userName = localStorage.getItem("chat_name");
-        if (!userName) {
-            userName = prompt("Group ထဲမဝင်ခင် သင့်နာမည်ပေးပါ:");
-            if (!userName || userName.trim() === "") {
-                userName = "Guest" + Math.floor(Math.random() * 1000);
-            }
-            localStorage.setItem("chat_name", userName);
-        }
+        // နာမည်တောင်းခြင်း
+        let user = localStorage.getItem("name") || prompt("သင့်နာမည်ပေးပါ:");
+        if (user) localStorage.setItem("name", user);
+        else user = "Guest";
 
-        const chatBox = document.getElementById("chat-box");
-        const msgInput = document.getElementById("msgInput");
-
-        // ၄။ စာပို့ခြင်း Function
-        async function sendMessage() {
-            const text = msgInput.value.trim();
-            if (text === "") return;
-            try {
+        // စာပို့ခြင်း
+        window.send = async () => {
+            const input = document.getElementById('msg');
+            if (input.value) {
                 await addDoc(collection(db, "messages"), {
-                    user: userName,
-                    text: text,
-                    createdAt: serverTimestamp()
+                    u: user,
+                    t: input.value,
+                    time: serverTimestamp()
                 });
-                msgInput.value = "";
-            } catch (e) {
-                console.error("Error sending message: ", e);
+                input.value = "";
             }
-        }
+        };
 
-        document.getElementById("sendBtn").onclick = sendMessage;
-        msgInput.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
-
-        // ၅။ Realtime စာဖတ်ခြင်း Logic
-        const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
-        onSnapshot(q, (snapshot) => {
-            chatBox.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const div = document.createElement("div");
-                div.className = "msg";
-                div.innerHTML = `<div class="user-name">${data.user}</div><div>${data.text}</div>`;
-                chatBox.appendChild(div);
+        // စာဖတ်ခြင်း
+        const q = query(collection(db, "messages"), orderBy("time", "asc"));
+        onSnapshot(q, (snap) => {
+            const box = document.getElementById('chat');
+            box.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                box.innerHTML += `<div class="m"><div class="u">${d.u}</div>${d.t}</div>`;
             });
-            chatBox.scrollTop = chatBox.scrollHeight;
+            box.scrollTop = box.scrollHeight;
         });
     </script>
 </body>

@@ -1,84 +1,84 @@
 <!DOCTYPE html>
-<html lang="my">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time Myanmar Chat</title>
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
+    <title>Firebase Group Chat</title>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; display: flex; flex-direction: column; height: 93vh; }
-        #chat-header { background: #0084ff; color: white; padding: 15px; text-align: center; font-weight: bold; }
-        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 8px 12px; border-radius: 15px; max-width: 70%; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .sender { font-size: 10px; font-weight: bold; display: block; margin-bottom: 2px; color: #555; }
-        .received { background: white; align-self: flex-start; }
-        .sent { background: #0084ff; color: white; align-self: flex-end; }
-        #chat-form { display: flex; padding: 10px; background: white; border-top: 1px solid #ddd; }
-        #msg-input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; outline: none; }
-        #send-btn { background: #0084ff; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; margin-left: 5px; cursor: pointer; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
+        .msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; background: white; border: 1px solid #ddd; }
+        .user-name { font-weight: bold; color: #075e54; font-size: 0.8em; }
+        .input-area { padding: 10px; display: flex; background: white; border-top: 1px solid #ccc; }
+        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; outline: none; }
+        button { padding: 10px 20px; margin-left: 5px; background: #075e54; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="chat-header">Myanmar Real-time Chat</div>
-<div id="chat-messages"></div>
+    <div id="chat-box"></div>
 
-<div id="chat-form">
-    <input type="text" id="msg-input" placeholder="စာရိုက်ပါ..." autocomplete="off">
-    <button id="send-btn">➤</button>
-</div>
+    <div class="input-area">
+        <input type="text" id="msgInput" placeholder="စာရိုက်ပါ...">
+        <button id="sendBtn">ပို့မည်</button>
+    </div>
 
-<script>
-    // 👇 ဒီနေရာမှာ Firebase ကပေးတဲ့ သင့်ရဲ့ ကိုယ်ပိုင် Config နဲ့ အစားထိုးပါ
-    const firebaseConfig = {
-        apiKey: "AIzaSyCaRYhKHHaPdsP1kbB0eA7ocfNCH7DyhDQ",
-        authDomain: "ok-sa-c39de.firebaseapp.com",
-        databaseURL: "https://ok-sa-c39de-default-rtdb.firebaseio.com",
-        projectId: "ok-sa-c39de",
-        storageBucket: "ok-sa-c39de.firebasestorage.app",
-        messagingSenderId: "818644208734",
-        appId: "1:818644208734:web:b16bf4b3a687626aa9b8cf",
-        measurementId: "G-4LN6B93WNY"
-     };
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com";
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+        // *** သင်၏ Firebase Config ကို ဒီမှာ ထည့်ပါ ***
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDqLaXkGPKN-Dohja-hs7v632fxIPufU8",
+            authDomain: "laoo-68bb5.firebaseapp.com",
+            projectId: "laoo-68bb5",
+            storageBucket: "laoo-68bb5.firebasestorage.app",
+            messagingSenderId: "487533047054",
+            appId: "1:487533047054:web:ed2a0badb70d279fa17b5f",
+            measurementId: "G-00NZ96P4DS"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    // နာမည်တောင်းခြင်း
-    let userName = localStorage.getItem("chat_username");
-    if (!userName) {
-        userName = prompt("သင့်နာမည်လေး ရိုက်ထည့်ပေးပါ-") || "Guest" + Math.floor(Math.random() * 100);
-        localStorage.setItem("chat_username", userName);
-    }
+        // ၁။ နာမည် စစ်ဆေးခြင်း (မရှိရင် တောင်းမယ်)
+        let userName = localStorage.getItem("chat_name");
+        if (!userName) {
+            userName = prompt("Group ထဲမဝင်ခင် သင့်နာမည်လေး အရင်ပေးပါ:");
+            if (!userName) userName = "Guest" + Math.floor(Math.random() * 1000);
+            localStorage.setItem("chat_name", userName);
+        }
 
-    const messagesContainer = document.getElementById('chat-messages');
-    const msgInput = document.getElementById('msg-input');
+        const chatBox = document.getElementById("chat-box");
+        const msgInput = document.getElementById("msgInput");
 
-    // စာပို့ခြင်း
-    document.getElementById('send-btn').onclick = () => {
-        const text = msgInput.value.trim();
-        if (text) {
-            db.ref("messages").push().set({
-                name: userName,
-                message: text,
-                time: Date.now()
+        // ၂။ စာပို့တဲ့ Function
+        async function sendMessage() {
+            if (msgInput.value.trim() === "") return;
+            
+            await addDoc(collection(db, "messages"), {
+                user: userName,
+                text: msgInput.value,
+                createdAt: serverTimestamp()
             });
             msgInput.value = "";
         }
-    };
 
-    // စာများဖတ်ခြင်း (Real-time)
-    db.ref("messages").limitToLast(20).on("child_added", (snapshot) => {
-        const data = snapshot.val();
-        const type = data.name === userName ? 'sent' : 'received';
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('msg', type);
-        msgDiv.innerHTML = `<span class="sender">${data.name}</span>${data.message}`;
-        messagesContainer.appendChild(msgDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    });
-</script>
+        document.getElementById("sendBtn").onclick = sendMessage;
+        msgInput.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
 
+        // ၃။ Database က စာတွေကို အချိန်နဲ့တပြေးညီ (Realtime) ဆွဲထုတ်ခြင်း
+        const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+        onSnapshot(q, (snapshot) => {
+            chatBox.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const div = document.createElement("div");
+                div.className = "msg";
+                div.innerHTML = `<div class="user-name">${data.user}</div><div>${data.text}</div>`;
+                chatBox.appendChild(div);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight; // အောက်ဆုံးကို အလိုအလျောက် ဆွဲချပေးမယ်
+        });
+    </script>
 </body>
 </html>

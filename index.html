@@ -7,33 +7,51 @@
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #dfe5eb; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Header */
         header { background: #075e54; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 100; }
         .edit-btn { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.8em; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
+
+        /* Chat Area */
         #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 100px; scroll-behavior: smooth; }
+        
+        /* Message CardView */
         .msg { max-width: 80%; padding: 10px 14px; border-radius: 15px; font-size: 0.95em; line-height: 1.4; box-shadow: 0 2px 4px rgba(0,0,0,0.1); word-wrap: break-word; }
         .user-name { font-weight: bold; font-size: 0.75em; margin-bottom: 4px; display: block; }
+        
+        /* My Messages (Right) */
         .my-msg { align-self: flex-end; background: #ffffff; border: 1px solid #d1d1d1; border-bottom-right-radius: 2px; color: #333; }
         .my-msg .user-name { color: #075e54; text-align: right; }
+
+        /* Other Messages (Left) */
         .other-msg { align-self: flex-start; background: #075e54; color: white; border-bottom-left-radius: 2px; }
         .other-msg .user-name { color: #80cbc4; }
+
+        /* Fixed Bottom Input Area */
         .input-area { position: fixed; bottom: 0; width: 100%; padding: 12px; background: white; display: flex; align-items: center; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 200; }
         input { flex: 1; padding: 12px 18px; border: 1px solid #e0e0e0; border-radius: 30px; outline: none; background: #f8f9fa; font-size: 1em; }
-        button { background: #075e54; color: white; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        button { background: #075e54; color: white; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2em; }
     </style>
 </head>
 <body>
+
     <header>
         <span>ကြိုဆိုပါတယ်</span>
         <div class="edit-btn" onclick="editName()">နာမည်ပြင်ရန်</div>
     </header>
+
     <div id="chat-box"></div>
+
     <div class="input-area">
         <input type="text" id="m" placeholder="စာရိုက်ပါ..." autocomplete="off">
         <button id="s">➤</button>
     </div>
+
+    <!-- Noti အသံ -->
     <audio id="notiSound" src="https://mixkit.co"></audio>
 
     <script type="module">
+        // Firebase လိပ်စာများကို အတိအကျ သုံးထားပါသည်
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -48,14 +66,16 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // Offline Persistence ဖွင့်ခြင်း (ဒါက စာပို့ရင် ချက်ချင်းပေါ်လာအောင် ကူညီပေးပါတယ်)
-        enableIndexedDbPersistence(db).catch((err) => console.log(err.code));
-
         const chatBox = document.getElementById('chat-box');
         const msgInput = document.getElementById('m');
         const sound = document.getElementById("notiSound");
 
+        // Notification Permission
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // နာမည်ပြင်ရန် Function
         window.editName = () => {
             let newName = prompt("ကြိုဆိုပါတယ်! နာမည်အသစ် ရိုက်ထည့်ပါ:");
             if (newName && newName.trim() !== "") {
@@ -68,10 +88,11 @@
         if (!user || user.trim() === "") user = "Guest" + Math.floor(Math.random() * 100);
         localStorage.setItem("name", user);
 
+        // စာပို့သည့် Function
         const sendMessage = async () => {
             const text = msgInput.value.trim();
             if (text !== "") {
-                msgInput.value = "";
+                msgInput.value = ""; 
                 try {
                     await addDoc(collection(db, "messages"), { 
                         u: user, 
@@ -85,10 +106,11 @@
         document.getElementById('s').onclick = sendMessage;
         msgInput.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
 
-        let isFirstLoad = true;
+        // Realtime Update
+        let isFirst = true;
         const q = query(collection(db, "messages"), orderBy("time", "asc"));
         
-        onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+        onSnapshot(q, (snap) => {
             chatBox.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
@@ -98,17 +120,19 @@
                 msgDiv.innerHTML = `<span class="user-name">${d.u}</span><div>${d.t}</div>`;
                 chatBox.appendChild(msgDiv);
 
-                // စာသစ်ရောက်ရင် Noti ပြရန်
-                if (!isFirstLoad && !isMe && !doc.metadata.hasPendingWrites) {
+                if (!isFirst && !isMe && !doc.metadata.hasPendingWrites) {
                     sound.play().catch(() => {});
                     if (Notification.permission === "granted") {
-                        new Notification("မိသားစုစကားဝိုင်း", { body: `${d.u}: ${d.t}`, icon: "https://flaticon.com" });
+                        new Notification("မိသားစုစကားဝိုင်း", { 
+                            body: `${d.u}: ${d.t}`,
+                            icon: "https://flaticon.com"
+                        });
                     }
                 }
             });
-            isFirstLoad = false;
-            // စာအသစ်ဝင်တိုင်း အောက်ဆုံးသို့ဆွဲချသည်
-            chatBox.scrollTop = chatBox.scrollHeight;
+            isFirst = false;
+            // စာပို့ပြီးတိုင်း အောက်ဆုံးသို့ဆွဲချရန်
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
         });
     </script>
 </body>

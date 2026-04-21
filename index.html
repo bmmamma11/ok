@@ -2,28 +2,30 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Firebase Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #ece5dd; display: flex; flex-direction: column; height: 100vh; }
-        #chat { flex: 1; overflow-y: auto; padding: 15px; }
-        .m { background: white; padding: 8px; margin-bottom: 8px; border-radius: 5px; }
-        .u { font-weight: bold; color: green; font-size: 0.8em; }
-        .input { padding: 10px; display: flex; background: #f0f0f0; }
+        body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; }
+        .msg { background: white; padding: 8px 12px; margin-bottom: 10px; border-radius: 10px; max-width: 80%; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .user { font-weight: bold; color: #075e54; font-size: 0.8em; margin-bottom: 3px; }
+        .input-box { padding: 10px; background: #f0f0f0; display: flex; }
         input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        button { margin-left: 5px; background: #075e54; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="chat"></div>
-    <div class="input">
-        <input type="text" id="msg" placeholder="စာရိုက်ပါ...">
-        <button onclick="send()">ပို့မည်</button>
+    <div class="input-box">
+        <input type="text" id="m" placeholder="စာရိုက်ပါ...">
+        <button id="s">➤</button>
     </div>
 
-    <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://gstatic.com";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com";
 
+        // အစ်ကို့ရဲ့ Firebase Config အစစ်
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -36,32 +38,25 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // နာမည်တောင်းခြင်း
-        let user = localStorage.getItem("name") || prompt("သင့်နာမည်ပေးပါ:");
-        if (user) localStorage.setItem("name", user);
-        else user = "Guest";
+        let user = localStorage.getItem("name") || prompt("နာမည်ပေးပါ:");
+        if (!user) user = "Guest" + Math.floor(Math.random() * 100);
+        localStorage.setItem("name", user);
 
-        // စာပို့ခြင်း
-        window.send = async () => {
-            const input = document.getElementById('msg');
-            if (input.value) {
-                await addDoc(collection(db, "messages"), {
-                    u: user,
-                    t: input.value,
-                    time: serverTimestamp()
-                });
-                input.value = "";
+        document.getElementById('s').onclick = async () => {
+            const i = document.getElementById('m');
+            if (i.value) {
+                await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp() });
+                i.value = "";
             }
         };
 
-        // စာဖတ်ခြင်း
         const q = query(collection(db, "messages"), orderBy("time", "asc"));
         onSnapshot(q, (snap) => {
             const box = document.getElementById('chat');
             box.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
-                box.innerHTML += `<div class="m"><div class="u">${d.u}</div>${d.t}</div>`;
+                box.innerHTML += `<div class="msg"><div class="user">${d.u}</div>${d.t}</div>`;
             });
             box.scrollTop = box.scrollHeight;
         });

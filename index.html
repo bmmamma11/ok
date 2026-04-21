@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat with Time</title>
+    <title>Chat with Alert Sound</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #dfe5eb; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -14,8 +14,6 @@
         
         .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 0.95em; box-shadow: 0 1px 2px rgba(0,0,0,0.2); word-wrap: break-word; position: relative; }
         .user-name { font-weight: bold; font-size: 0.75em; margin-bottom: 2px; display: block; }
-        
-        /* အချိန်ပြရန် Style */
         .msg-time { font-size: 0.65em; margin-top: 4px; display: block; opacity: 0.7; text-align: right; }
 
         .my-msg { align-self: flex-end; background: #ffffff; border-bottom-right-radius: 2px; color: #333; border: 1px solid #d1d1d1; }
@@ -34,7 +32,7 @@
 <body>
 
     <header>
-        <span>မိသားစု စကားဝိုင်း</span>
+        <span>Messenger Group</span>
         <div class="edit-btn" onclick="editName()">နာမည်ပြင်ရန်</div>
     </header>
 
@@ -45,9 +43,15 @@
         <button id="s">➤</button>
     </div>
 
+    <!-- ၁။ အသံဖိုင် ထည့်သွင်းထားသော နေရာ -->
+    <audio id="noti-sound">
+        <source src="https://mixkit.co" type="audio/mpeg">
+    </audio>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -61,6 +65,7 @@
         const db = getFirestore(app);
         const chatBox = document.getElementById('chat-box');
         const msgInput = document.getElementById('m');
+        const alertSound = document.getElementById('noti-sound');
 
         window.editName = () => {
             let n = prompt("နာမည်အသစ်:");
@@ -79,13 +84,14 @@
             }
         };
 
+        let isFirstLoad = true; // ပထမဆုံးအကြိမ် စာတွေအကုန်ဆွဲထုတ်ချိန်မှာ အသံမမြည်စေရန်
+
         onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
             chatBox.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
                 const isMe = d.u === user;
                 
-                // အချိန်ကို Format ပြုလုပ်ခြင်း (ဥပမာ - 7:08 PM)
                 let timeStr = "";
                 if(d.time) {
                     const date = d.time.toDate();
@@ -100,7 +106,14 @@
                     <span class="msg-time">${timeStr}</span>
                 `;
                 chatBox.appendChild(div);
+
+                // ၂။ တစ်ခြားသူဆီက စာအသစ်ရောက်လာရင် အသံမြည်စေရန်
+                if (!isFirstLoad && !isMe && !doc.metadata.hasPendingWrites) {
+                    alertSound.play().catch(error => console.log("Sound play failed:", error));
+                }
             });
+            
+            isFirstLoad = false;
             chatBox.scrollTo(0, chatBox.scrollHeight);
         });
 

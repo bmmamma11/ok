@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat with Sound Fixed</title>
+    <title>Chat with Guaranteed Sound</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #dfe5eb; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         header { background: #075e54; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .edit-btn { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.8em; cursor: pointer; }
+        .btns { display: flex; gap: 8px; }
+        .btn { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.75em; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
+
         #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #e5ddd5; padding-bottom: 150px !important; }
         .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 0.95em; box-shadow: 0 1px 2px rgba(0,0,0,0.2); word-wrap: break-word; position: relative; }
         .user-name { font-weight: bold; font-size: 0.75em; margin-bottom: 2px; display: block; }
@@ -17,17 +19,21 @@
         .my-msg .user-name { color: #075e54; text-align: right; }
         .other-msg { align-self: flex-start; background: #075e54; color: white; border-bottom-left-radius: 2px; }
         .other-msg .user-name { color: #80cbc4; }
-        .other-msg .msg-time { color: #b2dfdb; }
+
         .input-area { position: fixed; bottom: 0; width: 100%; padding: 10px 15px; background: #f0f0f0; display: flex; align-items: center; gap: 10px; box-shadow: 0 -3px 10px rgba(0,0,0,0.1); z-index: 9999; }
         input { flex: 1; padding: 12px 18px; border: 1px solid #ccc; border-radius: 25px; outline: none; font-size: 16px; background: white; }
         button { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
-<body onclick="enableAudio()"> <!-- Screen ပေါ်နှိပ်လိုက်တာနဲ့ အသံစနစ်ပွင့်မည် -->
+<body>
 
     <header>
         <span>Messenger Group</span>
-        <div class="edit-btn" onclick="editName()">နာမည်ပြင်ရန်</div>
+        <div class="btns">
+            <!-- အသံကို Activate လုပ်မည့်ခလုတ် -->
+            <div id="sound-btn" class="btn" onclick="activateAudio()">🔔 အသံဖွင့်ရန်</div>
+            <div class="btn" onclick="editName()">နာမည်ပြင်ရန်</div>
+        </div>
     </header>
 
     <div id="chat-box"></div>
@@ -55,14 +61,16 @@
         const chatBox = document.getElementById('chat-box');
         const msgInput = document.getElementById('m');
 
-        // အသံစနစ်ကို Setup လုပ်ခြင်း
+        // အသံစနစ်
         const alertSound = new Audio("https://mixkit.co");
         
-        window.enableAudio = () => {
+        window.activateAudio = () => {
             alertSound.play().then(() => {
-                alertSound.pause(); // တစ်ခါမြည်ပြပြီး အသံစနစ်ကို Activate လုပ်လိုက်ခြင်း
+                alertSound.pause();
                 alertSound.currentTime = 0;
-            }).catch(e => console.log("Audio activation failed", e));
+                document.getElementById('sound-btn').style.background = "#4caf50";
+                document.getElementById('sound-btn').innerHTML = "🔊 အသံဖွင့်ပြီး";
+            }).catch(e => alert("အသံဖွင့်မရပါ၊ ခလုတ်ကို ထပ်နှိပ်ပေးပါ။"));
         };
 
         window.editName = () => {
@@ -83,30 +91,25 @@
         };
 
         let isFirstLoad = true;
-
         onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
             chatBox.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
                 const isMe = d.u === user;
-                
                 let timeStr = "";
                 if(d.time) {
                     const date = d.time.toDate();
                     timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
-
                 const div = document.createElement("div");
                 div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
                 div.innerHTML = `<span class="user-name">${d.u}</span><div>${d.t}</div><span class="msg-time">${timeStr}</span>`;
                 chatBox.appendChild(div);
 
-                // စာသစ်ရောက်ရင် အသံမြည်စေရန်
                 if (!isFirstLoad && !isMe && !doc.metadata.hasPendingWrites) {
-                    alertSound.play().catch(error => console.log("Play failed", error));
+                    alertSound.play().catch(e => console.log("Sound play blocked"));
                 }
             });
-            
             isFirstLoad = false;
             chatBox.scrollTo(0, chatBox.scrollHeight);
         });

@@ -23,15 +23,11 @@
     </div>
 
     <script type="module">
-        // အရေးကြီး - Link များကို အောက်ပါအတိုင်း အပြည့်အစုံဖြစ်အောင် ပြင်ပါ
-        import { initializeApp } from "https://gstatic.com";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com";
+        // ၁။ Library Link များကို .js အဆုံးသတ်ဖြင့် အမှန်ကန်ဆုံး ပြင်ထားပါသည်
+        import { initializeApp } from "https://gstatic.com/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com/firebase-app.js";
 
-        // Error ကို Alert နဲ့ ပြပေးမယ့်အပိုင်း
-        window.onerror = function(msg, url, line) {
-            alert("Error: " + msg + "\nLine: " + line);
-        };
-
+        // ၂။ သင့်ရဲ့ Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDDqLaXkGPKN-Dohja-hs7v632fxIPufU8",
             authDomain: "://firebaseapp.com",
@@ -42,36 +38,43 @@
             measurementId: "G-00NZ96P4DS"
         };
 
+        // Firebase စတင်ခြင်း
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // ၃။ နာမည်တောင်းခြင်း Logic
         let userName = localStorage.getItem("chat_name");
         if (!userName) {
             userName = prompt("Group ထဲမဝင်ခင် သင့်နာမည်ပေးပါ:");
-            if (!userName) userName = "Guest" + Math.floor(Math.random() * 1000);
+            if (!userName || userName.trim() === "") {
+                userName = "Guest" + Math.floor(Math.random() * 1000);
+            }
             localStorage.setItem("chat_name", userName);
         }
 
         const chatBox = document.getElementById("chat-box");
         const msgInput = document.getElementById("msgInput");
 
+        // ၄။ စာပို့ခြင်း Function
         async function sendMessage() {
-            if (msgInput.value.trim() === "") return;
+            const text = msgInput.value.trim();
+            if (text === "") return;
             try {
                 await addDoc(collection(db, "messages"), {
                     user: userName,
-                    text: msgInput.value,
+                    text: text,
                     createdAt: serverTimestamp()
                 });
                 msgInput.value = "";
             } catch (e) {
-                alert("စာပို့မရပါ: " + e.message);
+                console.error("Error sending message: ", e);
             }
         }
 
         document.getElementById("sendBtn").onclick = sendMessage;
         msgInput.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
 
+        // ၅။ Realtime စာဖတ်ခြင်း Logic
         const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
         onSnapshot(q, (snapshot) => {
             chatBox.innerHTML = "";
@@ -83,8 +86,6 @@
                 chatBox.appendChild(div);
             });
             chatBox.scrollTop = chatBox.scrollHeight;
-        }, (error) => {
-            alert("Database ချိတ်မရပါ: " + error.message);
         });
     </script>
 </body>

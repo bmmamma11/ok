@@ -20,7 +20,7 @@
         .msg-time { font-size: 10px; opacity: 0.5; }
         .ticks { font-size: 12px; font-weight: bold; letter-spacing: -2px; }
         .ticks.sent { color: #999; }
-        .ticks.read { color: #5c6bc0; }
+        .ticks.read { color: #4a148c; } /* Viber Purple */
 
         .my-msg { align-self: flex-end; background: #d1e3ff; color: #1a1a1a; border-bottom-right-radius: 2px; }
         .my-msg .user-name { color: #1565c0; text-align: right; }
@@ -28,23 +28,23 @@
         .other-msg .user-name { color: #075e54; }
         .other-msg .ticks { display: none; }
 
-        /* အနိမ့်အမြင့်ကို သေချာညှိထားပါတယ် */
+        /* အနိမ့်အမြင့်ကို သေသေချာချာ ညှိထားပါတယ် */
         .input-area { 
             background: #f0f0f0; 
-            padding: 10px 12px; 
+            padding: 8px 12px; 
             border-top: 1px solid #ddd; 
             flex-shrink: 0; 
-            padding-bottom: 35px; 
+            padding-bottom: 32px; 
         }
         .input-bar { display: flex; align-items: center; gap: 10px; }
-        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 45px; display: flex; align-items: center; }
+        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 44px; display: flex; align-items: center; }
         input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; width: 100%; }
-        #send-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        #send-btn { background: #075e54; color: white; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
     </style>
 </head>
 <body>
     <header>
-Group        <span>Messenger</span>
+        <span>Messenger Group</span>
         <div class="btns">
             <div id="sound-btn" class="btn" onclick="activateAudio()">🔔 အသံဖွင့်</div>
             <div class="btn" onclick="editName()">နာမည်ပြင်</div>
@@ -104,7 +104,7 @@ Group        <span>Messenger</span>
                     u: user, 
                     t: text, 
                     time: serverTimestamp(), 
-                    delivered: false // အမှန်ခြစ်အတွက် logic အသစ်
+                    seen: false 
                 });
             }
         };
@@ -116,9 +116,8 @@ Group        <span>Messenger</span>
                 const d = snapDoc.data();
                 const isMe = d.u === user;
 
-                // တစ်ဖက်လူက စာလက်ခံရရှိပြီဆိုတာနဲ့ delivered ကို true ပြောင်းမယ်
-                if (!isMe && d.delivered === false) {
-                    updateDoc(doc(db, "messages", snapDoc.id), { delivered: true });
+                if (!isMe && d.seen === false) {
+                    updateDoc(doc(db, "messages", snapDoc.id), { seen: true });
                 }
 
                 let timeStr = d.time ? d.time.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
@@ -130,7 +129,7 @@ Group        <span>Messenger</span>
                     <div>${d.t}</div>
                     <div class="msg-info">
                         <span class="msg-time">${timeStr}</span>
-                        <div class="ticks ${d.delivered ? 'read' : 'sent'}">${d.delivered ? '✓✓' : '✓'}</div>
+                        <div class="ticks ${d.seen ? 'read' : 'sent'}">${d.seen ? '✓✓' : '✓'}</div>
                     </div>
                 `;
                 chatBox.appendChild(div);

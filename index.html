@@ -2,25 +2,25 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Messenger Group</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        header { background: #075e54; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 100; flex-shrink: 0; }
+        header { background: #075e54; color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 100; flex-shrink: 0; }
         .btns { display: flex; gap: 8px; }
-        .btn { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; }
+        .btn { background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; }
 
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 30px; }
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); word-wrap: break-word; position: relative; }
-        .user-name { font-weight: bold; font-size: 12px; margin-bottom: 4px; display: block; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; position: relative; }
+        .user-name { font-weight: bold; font-size: 12px; margin-bottom: 3px; display: block; }
         
-        .msg-info { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; }
-        .msg-time { font-size: 11px; opacity: 0.5; }
-        .ticks { font-size: 13px; font-weight: bold; letter-spacing: -3px; }
+        .msg-info { display: flex; align-items: center; justify-content: flex-end; gap: 3px; margin-top: 2px; }
+        .msg-time { font-size: 10px; opacity: 0.5; }
+        .ticks { font-size: 12px; font-weight: bold; letter-spacing: -2px; }
         .ticks.sent { color: #999; }
-        .ticks.read { color: #613dc1; }
+        .ticks.read { color: #5c6bc0; }
 
         .my-msg { align-self: flex-end; background: #d1e3ff; color: #1a1a1a; border-bottom-right-radius: 2px; }
         .my-msg .user-name { color: #1565c0; text-align: right; }
@@ -30,23 +30,23 @@
         .other-msg .msg-info { justify-content: flex-start; }
         .other-msg .ticks { display: none; }
 
-        /* Navigation Bar နဲ့ လွတ်အောင် 80px ထားထားပါတယ် */
+        /* စာရိုက်တဲ့နေရာကို ပါးပါးလေး ပြန်လျှော့ထားပါတယ် */
         .input-area { 
             background: #f0f0f0; 
-            padding: 10px 15px; 
+            padding: 8px 12px; 
             border-top: 1px solid #ddd; 
             flex-shrink: 0; 
-            padding-bottom: 80px; 
+            padding-bottom: 25px; /* အမြင့်ကို လျှော့ချလိုက်ပါတယ် */
         }
-        .input-bar { display: flex; align-items: center; gap: 12px; }
-        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 45px; display: flex; align-items: center; }
+        .input-bar { display: flex; align-items: center; gap: 10px; }
+        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 42px; display: flex; align-items: center; }
         input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; width: 100%; }
-        #send-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        #send-btn { background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
     </style>
 </head>
 <body>
     <header>
-        <span>Messenger</span>
+        <span>Messenger Group</span>
         <div class="btns">
             <div id="sound-btn" class="btn" onclick="activateAudio()">🔔 အသံဖွင့်</div>
             <div class="btn" onclick="editName()">နာမည်ပြင်</div>
@@ -106,27 +106,30 @@
                     u: user, 
                     t: text, 
                     time: serverTimestamp(), 
-                    status: "sent" 
+                    readBy: [] // ဖတ်တဲ့လူစာရင်းကို သိမ်းမယ်
                 });
             }
         };
 
         let isFirstLoad = true;
-        // နောက်ဆုံးစာ အခု ၅၀ ပဲပြဖို့ ကန့်သတ်လိုက်မယ် (မြန်အောင်လို့ပါ)
-        const q = query(collection(db, "messages"), orderBy("time", "asc"));
-        
-        onSnapshot(q, (snap) => {
+        onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
             chatBox.innerHTML = "";
             snap.forEach((snapDoc) => {
                 const d = snapDoc.data();
                 const isMe = d.u === user;
-                
-                // တစ်ဖက်လူပို့တဲ့စာဆိုရင် 'read' ပြောင်းမယ် (Error မတက်အောင် try catch သုံးထားတယ်)
-                if (!isMe && d.status === "sent") {
-                    try { updateDoc(doc(db, "messages", snapDoc.id), { status: "read" }); } catch(e){}
+                const readBy = d.readBy || [];
+
+                // တခြားလူတွေက စာဖတ်လိုက်ရင် readBy ထဲကို ကိုယ့်နာမည် ထည့်မယ်
+                if (!isMe && !readBy.includes(user)) {
+                    updateDoc(doc(db, "messages", snapDoc.id), { 
+                        readBy: [...readBy, user] 
+                    });
                 }
 
                 let timeStr = d.time ? d.time.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+                
+                // Group ထဲက တစ်ယောက်ယောက်က ဖတ်လိုက်တာနဲ့ ၂ ခြစ်ပြမယ်
+                const hasRead = readBy.length > 0;
 
                 const div = document.createElement("div");
                 div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
@@ -135,7 +138,7 @@
                     <div>${d.t}</div>
                     <div class="msg-info">
                         <span class="msg-time">${timeStr}</span>
-                        <div class="ticks ${d.status === 'read' ? 'read' : 'sent'}">${d.status === 'read' ? '✓✓' : '✓'}</div>
+                        <div class="ticks ${hasRead ? 'read' : 'sent'}">${hasRead ? '✓✓' : '✓'}</div>
                     </div>
                 `;
                 chatBox.appendChild(div);

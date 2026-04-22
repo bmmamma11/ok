@@ -3,31 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App - Status Check</title>
+    <title>Chat App - Complete Version</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1000; }
-        #chat { flex: 1; overflow-y: auto; padding: 65px 10px 80px 10px; display: flex; flex-direction: column; width: 100%; }
+        
+        .top-bar { 
+            background: #075e54; color: white; padding: 12px 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+            position: fixed; top: 0; width: 100%; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .change-btn { background: #128c7e; color: white; border: 1px solid #fff; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
+
+        #chat { flex: 1; overflow-y: auto; padding: 75px 10px 85px 10px; display: flex; flex-direction: column; }
+
         .msg-container { display: flex; align-items: center; margin-bottom: 15px; width: 100%; }
         .msg-container.own { flex-direction: row-reverse; }
         .msg-container.other { flex-direction: row; }
-        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); background: #fff; max-width: 70%; }
+
+        .bubble-wrap { display: flex; flex-direction: column; max-width: 70%; }
+        .own .bubble-wrap { align-items: flex-end; }
+
+        .bubble { padding: 10px 15px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; background: #fff; line-height: 1.4; position: relative; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 2px; }
         .other .bubble { background: #fff; border-top-left-radius: 2px; }
-        .heart-wrap { display: flex; flex-direction: column; align-items: center; margin: 0 10px; min-width: 35px; }
-        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; outline: none; }
-        .count-text { font-size: 11px; color: #666; margin-top: 2px; font-weight: bold; }
-        
-        /* Status Notification Box */
-        #notify-box { 
-            position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; 
-            border-radius: 10px; display: none; z-index: 2000; text-align: center;
-        }
 
-        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; z-index: 1000; }
-        input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        .user-name { font-size: 10px; color: #555; margin-bottom: 2px; padding: 0 5px; font-weight: bold; }
+        .meta { display: flex; align-items: center; font-size: 10px; color: #888; margin-top: 4px; }
+        .own .meta { flex-direction: row-reverse; }
+
+        .heart-wrap { display: flex; flex-direction: column; align-items: center; margin: 0 12px; min-width: 40px; }
+        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .count-text { font-size: 12px; color: #555; margin-top: 4px; font-weight: bold; }
+
+        #notify-box { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); padding: 15px 25px; border-radius: 10px; display: none; z-index: 2000; color: white; text-align: center; }
+
+        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 12px; display: flex; align-items: center; z-index: 1000; border-top: 1px solid #ddd; }
+        input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; font-size: 15px; }
         button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
     </style>
 </head>
@@ -37,7 +49,7 @@
 
     <div class="top-bar">
         <div style="font-size: 14px;">👤 <span id="display-name">...</span></div>
-        <button onclick="changeName()" style="background:#128c7e; color:white; border:1px solid #fff; border-radius:10px; padding:4px 10px; font-size:11px; cursor:pointer;">နာမည်ပြောင်း</button>
+        <button class="change-btn" id="change-name-btn">နာမည်ပြောင်းရန်</button>
     </div>
 
     <div id="chat"></div>
@@ -50,7 +62,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -66,16 +77,14 @@
         let user = localStorage.getItem("name") || "ဧည့်သည်";
         document.getElementById('display-name').innerText = user;
 
-        window.changeName = () => {
+        document.getElementById('change-name-btn').onclick = () => {
             const n = prompt("နာမည်အသစ်:", user);
-            if(n) { user = n; localStorage.setItem("name", n); location.reload(); }
+            if (n) { user = n; localStorage.setItem("name", n); document.getElementById('display-name').innerText = n; }
         };
 
         function tellUser(msg, color) {
             const nb = document.getElementById('notify-box');
-            nb.innerText = msg;
-            nb.style.background = color;
-            nb.style.display = "block";
+            nb.innerText = msg; nb.style.background = color; nb.style.display = "block";
             setTimeout(() => { nb.style.display = "none"; }, 2000);
         }
 
@@ -85,7 +94,7 @@
                 try {
                     await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
                     i.value = "";
-                } catch(e) { tellUser("စာပို့မရပါ (Error)", "red"); }
+                } catch(e) { tellUser("စာပို့မရပါ", "red"); }
             }
         };
 
@@ -97,33 +106,32 @@
                 const d = dDoc.data();
                 const id = dDoc.id;
                 const likes = d.likes || 0;
-                const isOwn = d.u === user;
+                const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
 
                 const msgDiv = document.createElement('div');
-                msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
+                msgDiv.className = `msg-container ${d.u === user ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
                     <div class="heart-wrap">
-                        <button class="heart-btn" onclick="hitHeart('${id}')">${likes > 0 ? '❤️' : '🤍'}</button>
+                        <button class="heart-btn" id="btn-${id}">${likes > 0 ? '❤️' : '🤍'}</button>
                         <span class="count-text">${likes}</span>
                     </div>
-                    <div class="bubble">${d.t}</div>
+                    <div class="bubble-wrap">
+                        <div class="user-name">${d.u}</div>
+                        <div class="bubble">${d.t}</div>
+                        <div class="meta"><span>${timeStr}</span></div>
+                    </div>
                 `;
                 box.appendChild(msgDiv);
-            });
-            box.scrollTop = box.scrollHeight;
-        });
 
-        // Window scope ထဲကို function ထည့်ပေးလိုက်တာ ပိုစိတ်ချရပါတယ်
-        window.hitHeart = async (id) => {
-            try {
-                const msgRef = doc(db, "messages", id);
-                await updateDoc(msgRef, { likes: increment(1) });
-                tellUser("အောင်မြင်သည်", "green");
-            } catch(e) {
-                tellUser("အသည်းပေးလို့မရပါ (Error)", "red");
-                console.error(e);
-            }
-        };
+                document.getElementById(`btn-${id}`).onclick = async () => {
+                    try {
+                        await updateDoc(doc(db, "messages", id), { likes: increment(1) });
+                        tellUser("အောင်မြင်သည်", "green");
+                    } catch(e) { tellUser("အသည်းပေးမရပါ (Error)", "red"); }
+                };
+            });
+            box.scrollTop = box.scrollHeight; // နောက်ဆုံးစာကို အလိုအလျောက် ရွှေ့ပေးခြင်း
+        });
     </script>
 </body>
 </html>

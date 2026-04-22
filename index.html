@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Final Chat Fix</title>
+    <title>Chat App - Final Version</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1000; }
-        #chat { flex: 1; overflow-y: auto; padding: 70px 10px 85px 10px; display: flex; flex-direction: column; }
-        .msg-container { display: flex; align-items: center; margin-bottom: 15px; width: 100%; }
-        .msg-container.own { flex-direction: row-reverse; }
+        #chat { flex: 1; overflow-y: auto; padding: 65px 10px 80px 10px; display: flex; flex-direction: column; width: 100%; }
+        .msg-row { display: flex; align-items: center; margin-bottom: 12px; }
+        .msg-row.own { flex-direction: row-reverse; }
         .bubble-wrap { display: flex; flex-direction: column; max-width: 75%; }
         .own .bubble-wrap { align-items: flex-end; }
-        .bubble { padding: 10px 15px; border-radius: 20px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; background: #fff; }
+        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); background: #fff; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 2px; }
-        .heart-wrap { display: flex; flex-direction: column; align-items: center; margin: 0 10px; min-width: 35px; }
-        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        #notify-box { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); padding: 15px 25px; border-radius: 10px; display: none; z-index: 2000; color: white; font-weight: bold; }
+        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; margin: 0 10px; outline: none; }
+        #notify-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 25px; border-radius: 10px; display: none; z-index: 2000; color: white; font-weight: bold; }
         .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 12px; display: flex; }
-        input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+        input#m { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 42px; height: 42px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -37,19 +36,17 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getDatabase, ref, push, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
-            authDomain: "://firebaseapp.com",
+            databaseURL: "https://firebaseio.com",
             projectId: "laoo-68bb5",
-            storageBucket: "://appspot.com",
-            messagingSenderId: "467533047034",
             appId: "1:467533047034:web:ed2a0badb70d279fa17b5f"
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getDatabase(app);
 
         let user = localStorage.getItem("name") || "ဧည့်သည်";
         document.getElementById('display-name').innerText = user;
@@ -62,33 +59,30 @@
         function tellUser(msg, color) {
             const nb = document.getElementById('notify-box');
             nb.innerText = msg; nb.style.background = color; nb.style.display = "block";
-            setTimeout(() => { nb.style.display = "none"; }, 2000);
+            setTimeout(() => { nb.style.display = "none"; }, 1500);
         }
 
-        document.getElementById('s').onclick = async () => {
+        document.getElementById('s').onclick = () => {
             const i = document.getElementById('m');
             if (i.value.trim() !== "") {
-                try {
-                    await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
-                    i.value = "";
-                } catch(e) { tellUser("Error", "red"); }
+                const msgRef = push(ref(db, 'messages'));
+                set(msgRef, { u: user, t: i.value, likes: 0 }).then(() => { i.value = ""; });
             }
         };
 
-        onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
+        onValue(ref(db, 'messages'), (snapshot) => {
             const box = document.getElementById('chat');
             box.innerHTML = "";
-            snap.forEach((dDoc) => {
-                const d = dDoc.data();
-                const id = dDoc.id;
+            snapshot.forEach((child) => {
+                const id = child.key;
+                const d = child.val();
                 const likes = d.likes || 0;
-
                 const msgDiv = document.createElement('div');
-                msgDiv.className = `msg-container ${d.u === user ? 'own' : 'other'}`;
+                msgDiv.className = `msg-row ${d.u === user ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
-                    <div class="heart-wrap">
+                    <div style="display:flex; flex-direction:column; align-items:center;">
                         <button class="heart-btn" onclick="hitHeart('${id}', ${likes})">${likes > 0 ? '❤️' : '🤍'}</button>
-                        <span style="font-size:11px; font-weight:bold; margin-top:3px;">${likes}</span>
+                        <span style="font-size:11px; font-weight:bold;">${likes}</span>
                     </div>
                     <div class="bubble-wrap">
                         <div style="font-size:10px; color:#555; margin-bottom:2px; padding:0 5px;">${d.u}</div>
@@ -100,15 +94,10 @@
             box.scrollTop = box.scrollHeight;
         });
 
-        // ဤနည်းလမ်းသည် increment မလိုဘဲ တိုက်ရိုက် update လုပ်သောကြောင့် ကျိန်းသေပေါက်ရပါမည်
-        window.hitHeart = async (id, currentLikes) => {
-            try {
-                const msgRef = doc(db, "messages", id);
-                await setDoc(msgRef, { likes: currentLikes + 1 }, { merge: true });
-                tellUser("အောင်မြင်သည်", "green");
-            } catch(e) {
-                tellUser("မရပါ (Error)", "red");
-            }
+        window.hitHeart = (id, currentLikes) => {
+            update(ref(db, 'messages/' + id), { likes: currentLikes + 1 })
+            .then(() => { tellUser("အောင်မြင်သည်", "green"); })
+            .catch(() => { tellUser("မရပါ (Error)", "red"); });
         };
     </script>
 </body>

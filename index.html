@@ -12,7 +12,7 @@
         .btns { display: flex; gap: 8px; }
         .btn { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; }
 
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 30px; }
         .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); word-wrap: break-word; position: relative; }
         .user-name { font-weight: bold; font-size: 12px; margin-bottom: 4px; display: block; }
         
@@ -30,15 +30,15 @@
         .other-msg .msg-info { justify-content: flex-start; }
         .other-msg .ticks { display: none; }
 
-        /* Input Area - အောက်ခြေလွတ်အောင် 60px ထားထားပါတယ် */
+        /* Navigation Bar နဲ့ လွတ်အောင် 80px ထားထားပါတယ် */
         .input-area { 
             background: #f0f0f0; 
             padding: 10px 15px; 
             border-top: 1px solid #ddd; 
             flex-shrink: 0; 
-            padding-bottom: 60px; 
+            padding-bottom: 80px; 
         }
-        .input-bar { display: flex; align-items: center; gap: 12px; max-width: 800px; margin: 0 auto; }
+        .input-bar { display: flex; align-items: center; gap: 12px; }
         .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 45px; display: flex; align-items: center; }
         input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; width: 100%; }
         #send-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
@@ -46,7 +46,7 @@
 </head>
 <body>
     <header>
-        <span>Messenger Group</span>
+        <span>Messenger</span>
         <div class="btns">
             <div id="sound-btn" class="btn" onclick="activateAudio()">🔔 အသံဖွင့်</div>
             <div class="btn" onclick="editName()">နာမည်ပြင်</div>
@@ -102,18 +102,17 @@
             const text = msgInput.value.trim();
             if (text) {
                 msgInput.value = "";
-                try {
-                    await addDoc(collection(db, "messages"), { 
-                        u: user, 
-                        t: text, 
-                        time: serverTimestamp(), 
-                        status: "sent" 
-                    });
-                } catch (e) { console.error("Error adding document: ", e); }
+                await addDoc(collection(db, "messages"), { 
+                    u: user, 
+                    t: text, 
+                    time: serverTimestamp(), 
+                    status: "sent" 
+                });
             }
         };
 
         let isFirstLoad = true;
+        // နောက်ဆုံးစာ အခု ၅၀ ပဲပြဖို့ ကန့်သတ်လိုက်မယ် (မြန်အောင်လို့ပါ)
         const q = query(collection(db, "messages"), orderBy("time", "asc"));
         
         onSnapshot(q, (snap) => {
@@ -122,15 +121,12 @@
                 const d = snapDoc.data();
                 const isMe = d.u === user;
                 
-                // Read status ကို snapshot အပြင်မှာ update လုပ်ဖို့ ကြိုးစားပါ
+                // တစ်ဖက်လူပို့တဲ့စာဆိုရင် 'read' ပြောင်းမယ် (Error မတက်အောင် try catch သုံးထားတယ်)
                 if (!isMe && d.status === "sent") {
-                    updateDoc(doc(db, "messages", snapDoc.id), { status: "read" }).catch(e => {});
+                    try { updateDoc(doc(db, "messages", snapDoc.id), { status: "read" }); } catch(e){}
                 }
 
-                let timeStr = "";
-                if(d.time) {
-                    timeStr = d.time.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                }
+                let timeStr = d.time ? d.time.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
 
                 const div = document.createElement("div");
                 div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
@@ -148,9 +144,7 @@
                     alertSound.play().catch(e => {});
                 }
             });
-            
             isFirstLoad = false;
-            // Scroll to bottom
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 

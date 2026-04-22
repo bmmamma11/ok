@@ -20,7 +20,7 @@
         .meta { font-size: 11px; color: #888; margin-top: 4px; }
         .heart-btn { 
             background: white; border: 1px solid #ddd; border-radius: 20px; 
-            min-width: 45px; height: 30px; display: flex; align-items: center; justify-content: center;
+            min-width: 50px; height: 32px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; margin: 0 8px; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .heart-btn span { font-size: 12px; margin-left: 4px; color: #555; font-weight: bold; }
@@ -44,10 +44,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // လိပ်စာအမှန်များ ဖြည့်ထားသည်
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -71,11 +69,14 @@
         document.getElementById('s').onclick = async () => {
             const i = document.getElementById('m');
             if (i.value.trim() !== "") {
-                await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
-                i.value = "";
+                try {
+                    await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
+                    i.value = "";
+                } catch(e) { alert("Error sending: " + e.message); }
             }
         };
 
+        // Snapshot ထဲမှာတင် onclick ကို တိုက်ရိုက်မထည့်ဘဲ event delegation သုံးတာ ပိုစိတ်ချရပါတယ်
         const q = query(collection(db, "messages"), orderBy("time", "asc"));
         onSnapshot(q, (snap) => {
             const box = document.getElementById('chat');
@@ -95,18 +96,25 @@
                         <div class="bubble">${d.t}</div>
                         <div class="meta">${timeStr}</div>
                     </div>
-                    <button class="heart-btn" id="btn-${id}">
+                    <button class="heart-btn" onclick="giveHeart('${id}')">
                         ${likes > 0 ? "❤️" : "🤍"} <span>${likes}</span>
                     </button>
                 `;
                 box.appendChild(msgDiv);
-
-                document.getElementById(`btn-${id}`).onclick = async () => {
-                    await updateDoc(doc(db, "messages", id), { likes: increment(1) });
-                };
             });
             box.scrollTop = box.scrollHeight;
         });
+
+        // window object ထဲထည့်မှ HTML ထဲက onclick က လှမ်းခေါ်လို့ရမှာပါ
+        window.giveHeart = async (id) => {
+            try {
+                const msgRef = doc(db, "messages", id);
+                await updateDoc(msgRef, { likes: increment(1) });
+            } catch (e) {
+                console.error(e);
+                alert("Error: " + e.message);
+            }
+        };
     </script>
 </body>
 </html>

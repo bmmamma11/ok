@@ -3,42 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App Final Fix</title>
+    <title>Chat App - Like Fix</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        .top-bar { 
-            background: #075e54; color: white; padding: 10px 15px; 
-            display: flex; justify-content: space-between; align-items: center;
-            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
-        }
-
+        .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
         #chat { flex: 1; overflow-y: auto; padding: 65px 10px 75px 10px; display: flex; flex-direction: column; width: 100%; }
-
         .msg-row { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; }
         .msg-row.own { align-self: flex-end; align-items: flex-end; }
         .msg-row.other { align-self: flex-start; align-items: flex-start; }
-        
         .bubble { padding: 8px 12px; border-radius: 15px; font-size: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 2px; }
         .other .bubble { background: #fff; border-top-left-radius: 2px; }
-
         .meta-data { display: flex; align-items: center; margin-top: 4px; }
         .time { font-size: 10px; color: #888; margin-right: 8px; }
-
-        .heart-btn { 
-            background: white; border: 1px solid #ccc; border-radius: 20px; 
-            padding: 3px 10px; cursor: pointer; font-size: 13px; 
-            display: flex; align-items: center; gap: 5px;
-        }
-
-        .input-area { 
-            position: fixed; bottom: 0; left: 0; width: 100%; background: #f0f0f0; 
-            padding: 10px; display: flex; align-items: center; z-index: 1000;
-        }
+        .heart-btn { background: white; border: 1px solid #ccc; border-radius: 20px; padding: 3px 10px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+        .input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; z-index: 1000; }
         input#m { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        button#s { margin-left: 8px; background: #075e54; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; }
+        button#s { margin-left: 8px; background: #075e54; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -79,18 +61,14 @@
             if(n) { localStorage.setItem("name", n); location.reload(); }
         };
 
-        // စာပို့ခြင်း (Likes ကို 0 နဲ့ အသေအချာ စတင်ပါမယ်)
         document.getElementById('s').onclick = async () => {
             const i = document.getElementById('m');
             if (i.value.trim() !== "") {
-                await addDoc(collection(db, "messages"), { 
-                    u: user, t: i.value, time: serverTimestamp(), likes: 0 
-                });
+                await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
                 i.value = "";
             }
         };
 
-        // စာဖတ်ခြင်းနှင့် အသည်းပေးခြင်း
         const q = query(collection(db, "messages"), orderBy("time", "asc"));
         onSnapshot(q, (snap) => {
             const box = document.getElementById('chat');
@@ -101,9 +79,8 @@
                 const isOwn = d.u === user;
                 const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
                 
-                // 0 ဆိုရင် အဖြူ၊ 0 ထက်များရင် အနီ
-                const currentLikes = d.likes || 0;
-                const heartIcon = (currentLikes > 0) ? "❤️" : "🤍";
+                const count = d.likes || 0;
+                const heartIcon = (count > 0) ? "❤️" : "🤍";
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `msg-row ${isOwn ? 'own' : 'other'}`;
@@ -113,19 +90,22 @@
                     <div class="meta-data">
                         <span class="time">${timeStr}</span>
                         <button class="heart-btn" id="btn-${id}">
-                            ${heartIcon} <span id="count-${id}">${currentLikes}</span>
+                            ${heartIcon} <span>${count}</span>
                         </button>
                     </div>
                 `;
                 box.appendChild(msgDiv);
 
-                // အသည်းပေးခလုတ်နှိပ်ခြင်း
+                // Like ပေးတဲ့ အပိုင်းကို သေချာပြင်ထားပါတယ်
                 document.getElementById(`btn-${id}`).onclick = async () => {
                     const msgRef = doc(db, "messages", id);
-                    const docSnap = await getDoc(msgRef);
-                    if (docSnap.exists()) {
-                        const newLikes = (docSnap.data().likes || 0) + 1;
-                        await updateDoc(msgRef, { likes: newLikes });
+                    try {
+                        // လက်ရှိ Count ကို 1 တိုးပြီး Update လုပ်ခြင်း
+                        await updateDoc(msgRef, { 
+                            likes: count + 1 
+                        });
+                    } catch (err) {
+                        console.error("Update Error:", err);
                     }
                 };
             });

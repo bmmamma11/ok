@@ -35,8 +35,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, update } from "https//www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { initializeApp } from "./firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc } from "./firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDDqLaXkGPKN-Dohja-hs7v632fxIPufU8",

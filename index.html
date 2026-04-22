@@ -2,59 +2,55 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App with Name Change</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat App Final Fix</title>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* Top Bar Styling */
         .top-bar { 
             background: #075e54; color: white; padding: 10px 15px; 
             display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100;
-        }
-        .current-user { font-size: 14px; font-weight: bold; }
-        .change-btn { 
-            background: #128c7e; color: white; border: 1px solid #fff; 
-            padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 12px;
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
         }
 
-        /* Chat Area */
-        #chat { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
-        .msg-row { display: flex; flex-direction: column; margin-bottom: 15px; max-width: 85%; }
+        #chat { flex: 1; overflow-y: auto; padding: 65px 10px 75px 10px; display: flex; flex-direction: column; width: 100%; }
+
+        .msg-row { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; }
         .msg-row.own { align-self: flex-end; align-items: flex-end; }
         .msg-row.other { align-self: flex-start; align-items: flex-start; }
         
-        .user-name { font-size: 11px; color: #555; margin-bottom: 3px; padding: 0 5px; }
-        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .own .bubble { background: #dcf8c6; color: #000; border-top-right-radius: 2px; }
-        .other .bubble { background: #fff; color: #000; border-top-left-radius: 2px; }
+        .bubble { padding: 8px 12px; border-radius: 15px; font-size: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .own .bubble { background: #dcf8c6; border-top-right-radius: 2px; }
+        .other .bubble { background: #fff; border-top-left-radius: 2px; }
 
         .meta-data { display: flex; align-items: center; margin-top: 4px; }
-        .time { font-size: 10px; color: #888; margin: 0 10px; }
+        .time { font-size: 10px; color: #888; margin-right: 8px; }
+
         .heart-btn { 
-            background: white; border: 1px solid #ddd; border-radius: 20px; 
-            padding: 3px 10px; cursor: pointer; display: flex; align-items: center; 
-            font-size: 14px; gap: 5px;
+            background: white; border: 1px solid #ccc; border-radius: 20px; 
+            padding: 3px 10px; cursor: pointer; font-size: 13px; 
+            display: flex; align-items: center; gap: 5px;
         }
 
-        /* Input Section */
-        .input-box { padding: 10px; background: #f0f0f0; display: flex; align-items: center; border-top: 1px solid #ddd; }
-        input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; font-size: 20px; }
+        .input-area { 
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #f0f0f0; 
+            padding: 10px; display: flex; align-items: center; z-index: 1000;
+        }
+        input#m { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        button#s { margin-left: 8px; background: #075e54; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; }
     </style>
 </head>
 <body>
 
-    <!-- အပေါ်က Bar အသစ် -->
     <div class="top-bar">
-        <div class="current-user">နာမည်: <span id="display-name">...</span></div>
-        <button class="change-btn" id="change-name-btn">နာမည်ပြောင်းရန်</button>
+        <div style="font-size: 14px;">👤 <span id="display-name">...</span></div>
+        <button onclick="changeName()" style="background:#128c7e; color:white; border:1px solid #fff; border-radius:10px; padding:4px 8px; font-size:11px;">နာမည်ပြောင်း</button>
     </div>
 
     <div id="chat"></div>
 
-    <div class="input-box">
+    <div class="input-area">
         <input type="text" id="m" placeholder="စာရိုက်ပါ..." autocomplete="off">
         <button id="s">➤</button>
     </div>
@@ -75,21 +71,15 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // နာမည်စီမံခန့်ခွဲခြင်း
         let user = localStorage.getItem("name") || "ဧည့်သည်";
         document.getElementById('display-name').innerText = user;
 
-        document.getElementById('change-name-btn').onclick = () => {
-            const newName = prompt("နာမည်အသစ် ရိုက်ထည့်ပါ:", user);
-            if (newName && newName.trim() !== "") {
-                user = newName;
-                localStorage.setItem("name", user);
-                document.getElementById('display-name').innerText = user;
-                location.reload(); // Chat list ကို refresh လုပ်ပေးခြင်း
-            }
+        window.changeName = () => {
+            const n = prompt("နာမည်အသစ်:", user);
+            if(n) { localStorage.setItem("name", n); location.reload(); }
         };
 
-        // စာပို့ခြင်း
+        // စာပို့ခြင်း (Likes ကို 0 နဲ့ အသေအချာ စတင်ပါမယ်)
         document.getElementById('s').onclick = async () => {
             const i = document.getElementById('m');
             if (i.value.trim() !== "") {
@@ -110,25 +100,33 @@
                 const id = dDoc.id;
                 const isOwn = d.u === user;
                 const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
-                const heartIcon = (d.likes > 0) ? "❤️" : "🤍";
+                
+                // 0 ဆိုရင် အဖြူ၊ 0 ထက်များရင် အနီ
+                const currentLikes = d.likes || 0;
+                const heartIcon = (currentLikes > 0) ? "❤️" : "🤍";
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `msg-row ${isOwn ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
-                    <div class="user-name">${d.u}</div>
+                    <div style="font-size:11px; color:#555; margin-bottom:2px;">${d.u}</div>
                     <div class="bubble">${d.t}</div>
                     <div class="meta-data">
                         <span class="time">${timeStr}</span>
                         <button class="heart-btn" id="btn-${id}">
-                            ${heartIcon} <span>${d.likes || 0}</span>
+                            ${heartIcon} <span id="count-${id}">${currentLikes}</span>
                         </button>
                     </div>
                 `;
                 box.appendChild(msgDiv);
 
+                // အသည်းပေးခလုတ်နှိပ်ခြင်း
                 document.getElementById(`btn-${id}`).onclick = async () => {
                     const msgRef = doc(db, "messages", id);
-                    await updateDoc(msgRef, { likes: increment(1) });
+                    const docSnap = await getDoc(msgRef);
+                    if (docSnap.exists()) {
+                        const newLikes = (docSnap.data().likes || 0) + 1;
+                        await updateDoc(msgRef, { likes: newLikes });
+                    }
                 };
             });
             box.scrollTop = box.scrollHeight;

@@ -3,41 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App - Logic Check</title>
+    <title>Chat App - Status Check</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1000; }
         #chat { flex: 1; overflow-y: auto; padding: 65px 10px 80px 10px; display: flex; flex-direction: column; width: 100%; }
-        
-        /* Message UI */
         .msg-container { display: flex; align-items: center; margin-bottom: 15px; width: 100%; }
         .msg-container.own { flex-direction: row-reverse; }
         .msg-container.other { flex-direction: row; }
-        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; background: #fff; max-width: 70%; }
+        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); background: #fff; max-width: 70%; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 2px; }
         .other .bubble { background: #fff; border-top-left-radius: 2px; }
-
-        /* Heart UI */
         .heart-wrap { display: flex; flex-direction: column; align-items: center; margin: 0 10px; min-width: 35px; }
         .heart-btn { background: white; border: 1px solid #ddd; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; outline: none; }
         .count-text { font-size: 11px; color: #666; margin-top: 2px; font-weight: bold; }
-
-        /* အောင်မြင်ကြောင်းပြတဲ့ Box */
-        #status-box { 
-            position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
-            padding: 8px 15px; border-radius: 20px; font-size: 12px; color: white;
-            display: none; z-index: 2000;
+        
+        /* Status Notification Box */
+        #notify-box { 
+            position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; 
+            border-radius: 10px; display: none; z-index: 2000; text-align: center;
         }
 
         .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; z-index: 1000; }
         input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="status-box"></div>
+    <div id="notify-box"></div>
 
     <div class="top-bar">
         <div style="font-size: 14px;">👤 <span id="display-name">...</span></div>
@@ -72,16 +68,15 @@
 
         window.changeName = () => {
             const n = prompt("နာမည်အသစ်:", user);
-            if(n) { user = n; localStorage.setItem("name", n); document.getElementById('display-name').innerText = n; location.reload(); }
+            if(n) { user = n; localStorage.setItem("name", n); location.reload(); }
         };
 
-        // Status ပြတဲ့ Function
-        function showStatus(msg, isError = false) {
-            const box = document.getElementById('status-box');
-            box.innerText = msg;
-            box.style.background = isError ? "#e74c3c" : "#2ecc71";
-            box.style.display = "block";
-            setTimeout(() => { box.style.display = "none"; }, 2000);
+        function tellUser(msg, color) {
+            const nb = document.getElementById('notify-box');
+            nb.innerText = msg;
+            nb.style.background = color;
+            nb.style.display = "block";
+            setTimeout(() => { nb.style.display = "none"; }, 2000);
         }
 
         document.getElementById('s').onclick = async () => {
@@ -90,7 +85,7 @@
                 try {
                     await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
                     i.value = "";
-                } catch(e) { showStatus("စာပို့မရပါ - Rules စစ်ပါ", true); }
+                } catch(e) { tellUser("စာပို့မရပါ (Error)", "red"); }
             }
         };
 
@@ -101,34 +96,34 @@
             snap.forEach((dDoc) => {
                 const d = dDoc.data();
                 const id = dDoc.id;
-                const count = d.likes || 0;
-                const heartIcon = (count > 0) ? "❤️" : "🤍";
+                const likes = d.likes || 0;
+                const isOwn = d.u === user;
 
                 const msgDiv = document.createElement('div');
-                msgDiv.className = `msg-container ${d.u === user ? 'own' : 'other'}`;
+                msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
                     <div class="heart-wrap">
-                        <button class="heart-btn" id="btn-${id}">${heartIcon}</button>
-                        <span class="count-text">${count}</span>
+                        <button class="heart-btn" onclick="hitHeart('${id}')">${likes > 0 ? '❤️' : '🤍'}</button>
+                        <span class="count-text">${likes}</span>
                     </div>
                     <div class="bubble">${d.t}</div>
                 `;
                 box.appendChild(msgDiv);
-
-                // အသည်းပေးခြင်းနှင့် စစ်ဆေးခြင်း
-                document.getElementById(`btn-${id}`).onclick = async () => {
-                    const msgRef = doc(db, "messages", id);
-                    try {
-                        await updateDoc(msgRef, { likes: increment(1) });
-                        showStatus("အောင်မြင်သည်"); // Save ဖြစ်သွားရင်ပြမယ်
-                    } catch(e) {
-                        showStatus("အသည်းပေးလို့မရပါ (Error)", true); // Save မရရင်ပြမယ်
-                        console.error(e);
-                    }
-                };
             });
             box.scrollTop = box.scrollHeight;
         });
+
+        // Window scope ထဲကို function ထည့်ပေးလိုက်တာ ပိုစိတ်ချရပါတယ်
+        window.hitHeart = async (id) => {
+            try {
+                const msgRef = doc(db, "messages", id);
+                await updateDoc(msgRef, { likes: increment(1) });
+                tellUser("အောင်မြင်သည်", "green");
+            } catch(e) {
+                tellUser("အသည်းပေးလို့မရပါ (Error)", "red");
+                console.error(e);
+            }
+        };
     </script>
 </body>
 </html>

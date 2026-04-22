@@ -24,29 +24,27 @@
 
         .my-msg { align-self: flex-end; background: #d1e3ff; color: #1a1a1a; border-bottom-right-radius: 2px; }
         .my-msg .user-name { color: #1565c0; text-align: right; }
-        
         .other-msg { align-self: flex-start; background: #ffffff; color: #1a1a1a; border-bottom-left-radius: 2px; }
         .other-msg .user-name { color: #075e54; }
-        .other-msg .msg-info { justify-content: flex-start; }
         .other-msg .ticks { display: none; }
 
-        /* စာရိုက်တဲ့နေရာကို ပါးပါးလေး ပြန်လျှော့ထားပါတယ် */
+        /* အနိမ့်အမြင့်ကို သေချာညှိထားပါတယ် */
         .input-area { 
             background: #f0f0f0; 
-            padding: 8px 12px; 
+            padding: 10px 12px; 
             border-top: 1px solid #ddd; 
             flex-shrink: 0; 
-            padding-bottom: 25px; /* အမြင့်ကို လျှော့ချလိုက်ပါတယ် */
+            padding-bottom: 35px; 
         }
         .input-bar { display: flex; align-items: center; gap: 10px; }
-        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 42px; display: flex; align-items: center; }
+        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 45px; display: flex; align-items: center; }
         input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; width: 100%; }
-        #send-btn { background: #075e54; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        #send-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
     </style>
 </head>
 <body>
     <header>
-        <span>Messenger Group</span>
+Group        <span>Messenger</span>
         <div class="btns">
             <div id="sound-btn" class="btn" onclick="activateAudio()">🔔 အသံဖွင့်</div>
             <div class="btn" onclick="editName()">နာမည်ပြင်</div>
@@ -106,7 +104,7 @@
                     u: user, 
                     t: text, 
                     time: serverTimestamp(), 
-                    readBy: [] // ဖတ်တဲ့လူစာရင်းကို သိမ်းမယ်
+                    delivered: false // အမှန်ခြစ်အတွက် logic အသစ်
                 });
             }
         };
@@ -117,20 +115,14 @@
             snap.forEach((snapDoc) => {
                 const d = snapDoc.data();
                 const isMe = d.u === user;
-                const readBy = d.readBy || [];
 
-                // တခြားလူတွေက စာဖတ်လိုက်ရင် readBy ထဲကို ကိုယ့်နာမည် ထည့်မယ်
-                if (!isMe && !readBy.includes(user)) {
-                    updateDoc(doc(db, "messages", snapDoc.id), { 
-                        readBy: [...readBy, user] 
-                    });
+                // တစ်ဖက်လူက စာလက်ခံရရှိပြီဆိုတာနဲ့ delivered ကို true ပြောင်းမယ်
+                if (!isMe && d.delivered === false) {
+                    updateDoc(doc(db, "messages", snapDoc.id), { delivered: true });
                 }
 
                 let timeStr = d.time ? d.time.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
                 
-                // Group ထဲက တစ်ယောက်ယောက်က ဖတ်လိုက်တာနဲ့ ၂ ခြစ်ပြမယ်
-                const hasRead = readBy.length > 0;
-
                 const div = document.createElement("div");
                 div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
                 div.innerHTML = `
@@ -138,7 +130,7 @@
                     <div>${d.t}</div>
                     <div class="msg-info">
                         <span class="msg-time">${timeStr}</span>
-                        <div class="ticks ${hasRead ? 'read' : 'sent'}">${hasRead ? '✓✓' : '✓'}</div>
+                        <div class="ticks ${d.delivered ? 'read' : 'sent'}">${d.delivered ? '✓✓' : '✓'}</div>
                     </div>
                 `;
                 chatBox.appendChild(div);

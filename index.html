@@ -3,49 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App</title>
+    <title>Chat App - Custom Icon</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1000; height: 50px; }
         #chat { flex: 1; overflow-y: auto; padding: 60px 10px 80px 10px; display: flex; flex-direction: column; }
         
+        .p-img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: #ddd; vertical-align: middle; }
+        .msg-p-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-bottom: 2px; }
+
         .msg-container { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; }
         .msg-container.own { align-self: flex-end; align-items: flex-end; }
         .msg-container.other { align-self: flex-start; align-items: flex-start; }
 
-        /* စာသားနဲ့ အသဲပုံကို ဘေးချင်းကပ်ပေးသည့်နေရာ */
         .bubble-row { display: flex; align-items: center; gap: 8px; width: 100%; }
-        .own .bubble-row { flex-direction: row-reverse; } /* ပို့သူဆိုရင် အသဲကို ဘယ်ဘက်ထား */
+        .own .bubble-row { flex-direction: row-reverse; }
 
-        .bubble { padding: 10px 15px; border-radius: 20px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; max-width: 100%; }
+        .bubble { padding: 10px 15px; border-radius: 20px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 4px; }
         .other .bubble { background: #fff; border-top-left-radius: 4px; }
 
-        /* အမှန်ခြစ် ၂ ခုကို အနီးကပ်ဆုံးဖြစ်အောင် စေ့ထားသည် */
         .meta { font-size: 10px; color: #888; margin-top: 4px; display: flex; align-items: center; }
-        .status-tick { color: #2ecc71; font-weight: bold; font-size: 13px; letter-spacing: -4px; margin-right: 8px; display: inline-block; }
+        .status-tick { color: #2ecc71; font-weight: bold; font-size: 13px; letter-spacing: -4px; margin-right: 8px; }
 
-        /* အသဲ Button ကို စာသားဘေးမှာ သေသပ်စွာထားရှိခြင်း */
-        .heart-btn { 
-            background: white; border: 1px solid #ddd; border-radius: 15px; 
-            padding: 3px 8px; font-size: 12px; cursor: pointer; 
-            display: flex; align-items: center; gap: 3px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            flex-shrink: 0; /* အရွယ်အစား မပြောင်းလဲစေရန် */
-        }
+        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 15px; padding: 3px 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); flex-shrink: 0; }
         .heart-btn.active { border-color: #ff5252; color: #ff5252; }
 
         .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; }
         input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
         button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* Modal Styling (နာမည်ပြင်ရန်သာ) */
+        #customModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+        .modal-card { background: white; width: 90%; max-width: 320px; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; }
+        .modal-p-wrap { width: 80px; height: 80px; margin: 0 auto 20px; }
+        .modal-p-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #075e54; }
+        .modal-input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #eee; border-radius: 10px; outline: none; background: #f9f9f9; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div>👤 <span id="display-name">...</span></div>
-        <button onclick="changeName()" style="background:#128c7e; color:white; border:none; border-radius:5px; padding:5px; cursor:pointer;">နာမည်ပြောင်း</button>
+        <div>
+            <!-- ပုံနေရာမှာ သင်ပို့ထားတဲ့ Icon Link ကို တိုက်ရိုက်ထည့်ထားပါတယ် -->
+            <img id="top-p-img" src="https://ibb.co" class="p-img">
+            <span id="display-name" style="margin-left: 5px;">...</span>
+        </div>
+        <button onclick="editProfile()" style="background:#128c7e; color:white; border:none; border-radius:5px; padding:5px 10px; cursor:pointer;">ပြုပြင်ရန်</button>
     </div>
 
     <div id="chat"></div>
@@ -55,10 +60,24 @@
         <button id="s">➤</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    <!-- Modal Box (နာမည်တစ်ခုတည်း ပြင်ရန်) -->
+    <div id="customModal">
+        <div class="modal-card">
+            <h3 style="margin:0 0 20px; color:#075e54; font-size:18px;">နာမည်ပြုပြင်ရန်</h3>
+            <div class="modal-p-wrap">
+                <img src="https://ibb.co" class="modal-p-img">
+            </div>
+            <input type="text" id="modalName" class="modal-input" placeholder="နာမည်အသစ် ရိုက်ထည့်ပါ...">
+            <div style="display:flex; justify-content:flex-end; gap:15px;">
+                <button onclick="closeModal()" style="background:none; border:none; color:#777; font-weight:bold; cursor:pointer;">CANCEL</button>
+                <button id="saveBtn" style="background:#075e54; border:none; color:white; padding:10px 25px; border-radius:10px; font-weight:bold; cursor:pointer;">OK</button>
+            </div>
+        </div>
+    </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -71,20 +90,35 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let user = localStorage.getItem("name") || "User_" + Math.floor(Math.random() * 1000);
-        localStorage.setItem("name", user);
-        document.getElementById('display-name').innerText = user;
+        // အမြဲသုံးမည့် ပုံ Link (သင်ပေးထားသောပုံ)
+        const FIXED_IMG = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhZyEN60GGQ1q2nHs55YkoF2tesvV9xgpvc2HYVktG5PhVLvHQSwKAmaHIE6BL0EBJH1HQ3ggUVw2ABI18_u6fap_Ex5JpzR_nAyebTl2u7OFLSDWtAocM_wRmNtnOAv1iRz99s9lURg_llcWrofEk9dWCjqakbXWWKpY04OhvHFQ0GvFAhBJE7ENs_lcM/s740/1000008702.jpg";
 
-        window.changeName = () => {
-            const n = prompt("နာမည်အသစ်:", user);
-            if(n) { localStorage.setItem("name", n); location.reload(); }
+        let user = localStorage.getItem("name") || "User_" + Math.floor(Math.random() * 1000);
+        document.getElementById('display-name').innerText = user;
+        document.getElementById('top-p-img').src = FIXED_IMG;
+
+        window.editProfile = () => {
+            document.getElementById('modalName').value = user;
+            document.getElementById('customModal').style.display = 'flex';
+        };
+
+        window.closeModal = () => {
+            document.getElementById('customModal').style.display = 'none';
+        };
+
+        document.getElementById('saveBtn').onclick = () => {
+            const n = document.getElementById('modalName').value;
+            if(n.trim() !== "") {
+                localStorage.setItem("name", n);
+                location.reload();
+            }
         };
 
         document.getElementById('s').onclick = async () => {
             const i = document.getElementById('m');
             if (i.value.trim() !== "") {
                 await addDoc(collection(db, "messages"), { 
-                    u: user, t: i.value, time: serverTimestamp(), likedBy: [], readBy: [user] 
+                    u: user, img: FIXED_IMG, t: i.value, time: serverTimestamp(), likedBy: [], readBy: [user] 
                 });
                 i.value = "";
             }
@@ -99,7 +133,6 @@
                 const id = dDoc.id;
                 const isOwn = d.u === user;
                 const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
-                
                 const likedBy = d.likedBy || [];
                 const hasLiked = likedBy.includes(user);
                 const readBy = d.readBy || [];
@@ -112,7 +145,10 @@
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
-                    <div style="font-size:10px; color:#555; margin-bottom:2px;">${d.u}</div>
+                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
+                        <img src="${FIXED_IMG}" class="msg-p-img">
+                        <span style="font-size:10px; color:#555;">${d.u}</span>
+                    </div>
                     <div class="bubble-row">
                         <div class="bubble">${d.t}</div>
                         <button class="heart-btn ${hasLiked ? 'active' : ''}" onclick="toggleHeart('${id}', ${hasLiked})">

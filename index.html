@@ -95,11 +95,18 @@
                     <div class="bubble">${d.t}</div>
                 `;
                 box.appendChild(msgDiv);
-
-                document.getElementById(`btn-${id}`).onclick = async () => {
-                    await updateDoc(doc(db, "messages", id), { likes: increment(1) });
-                };
-            });
+document.getElementById(`btn-${id}`).onclick = async () => {
+    try {
+        const msgRef = doc(db, "messages", id);
+        await updateDoc(msgRef, { 
+            likes: increment(1) 
+        });
+        console.log("Like updated!");
+    } catch (e) {
+        console.error("Error updating likes: ", e);
+        alert("အသည်းပေးလို့မရပါ - Rules ကို စစ်ဆေးပါ");
+    }
+};
             box.scrollTop = box.scrollHeight;
         });
     </script>

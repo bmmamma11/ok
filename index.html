@@ -36,9 +36,8 @@
         .heart-btn { 
             background: white; border: 1px solid #ddd; border-radius: 50%; width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
-            font-size: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.2s;
+            font-size: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .heart-btn:active { transform: scale(0.8); }
         .count-text { font-size: 11px; color: #666; margin-top: 2px; font-weight: bold; }
 
         .meta { font-size: 10px; color: #888; margin-top: 4px; padding: 0 5px; }
@@ -66,6 +65,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
@@ -89,7 +89,6 @@
                 user = n;
                 localStorage.setItem("name", n);
                 document.getElementById('display-name').innerText = n;
-                location.reload(); 
             }
         };
 
@@ -116,15 +115,16 @@
                 const id = dDoc.id;
                 const isOwn = d.u === user;
                 const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
-                const likes = d.likes || 0;
-                const heartIcon = (likes > 0) ? "❤️" : "🤍";
+                
+                const count = d.likes || 0;
+                const heartIcon = (count > 0) ? "❤️" : "🤍";
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
                     <div class="heart-wrap">
                         <button class="heart-btn" id="btn-${id}">${heartIcon}</button>
-                        <span class="count-text">${likes}</span>
+                        <span class="count-text">${count}</span>
                     </div>
                     <div class="bubble-wrap">
                         <div style="font-size:10px; color:#555; margin-bottom:2px; padding:0 5px;">${d.u}</div>
@@ -134,13 +134,16 @@
                 `;
                 box.appendChild(msgDiv);
 
-                // Like Functionality
+                // အသည်းပေးတဲ့ function ကို ပိုစိတ်ချရတဲ့နည်းနဲ့ ပြောင်းထားပါတယ်
                 document.getElementById(`btn-${id}`).onclick = async () => {
+                    const msgRef = doc(db, "messages", id);
                     try {
-                        const msgRef = doc(db, "messages", id);
-                        await updateDoc(msgRef, { likes: increment(1) });
+                        await updateDoc(msgRef, { 
+                            likes: count + 1 
+                        });
                     } catch (e) {
-                        alert("Error: Firebase Rules ကို Publish လုပ်ထားဖို့ လိုအပ်ပါတယ်။");
+                        console.error(e);
+                        alert("Update လုပ်လို့မရပါ၊ Firebase Rules ကို Publish လုပ်ထားကြောင်း ပြန်စစ်ပေးပါ။");
                     }
                 };
             });

@@ -2,68 +2,31 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Messenger Group</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        header { background: #075e54; color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 100; flex-shrink: 0; }
-        .btns { display: flex; gap: 8px; }
-        .btn { background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; }
-
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; position: relative; }
-        .user-name { font-weight: bold; font-size: 12px; margin-bottom: 3px; display: block; }
-        
-        .msg-info { display: flex; align-items: center; justify-content: flex-end; gap: 3px; margin-top: 2px; }
-        .msg-time { font-size: 10px; opacity: 0.5; }
-        .ticks { font-size: 12px; font-weight: bold; letter-spacing: -2px; }
-        .ticks.sent { color: #999; }
-        .ticks.read { color: #4a148c; } /* Viber Purple */
-
-        .my-msg { align-self: flex-end; background: #d1e3ff; color: #1a1a1a; border-bottom-right-radius: 2px; }
-        .my-msg .user-name { color: #1565c0; text-align: right; }
-        .other-msg { align-self: flex-start; background: #ffffff; color: #1a1a1a; border-bottom-left-radius: 2px; }
-        .other-msg .user-name { color: #075e54; }
-        .other-msg .ticks { display: none; }
-
-        /* အနိမ့်အမြင့်ကို သေသေချာချာ ညှိထားပါတယ် */
-        .input-area { 
-            background: #f0f0f0; 
-            padding: 8px 12px; 
-            border-top: 1px solid #ddd; 
-            flex-shrink: 0; 
-            padding-bottom: 32px; 
-        }
-        .input-bar { display: flex; align-items: center; gap: 10px; }
-        .field-wrapper { flex: 1; background: white; border-radius: 25px; border: 1px solid #ddd; padding: 0 15px; height: 44px; display: flex; align-items: center; }
-        input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; width: 100%; }
-        #send-btn { background: #075e54; color: white; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; }
+        .msg { background: white; padding: 8px 12px; margin-bottom: 10px; border-radius: 10px; max-width: 80%; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .user { font-weight: bold; color: #075e54; font-size: 0.8em; margin-bottom: 3px; }
+        .input-box { padding: 10px; background: #f0f0f0; display: flex; }
+        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        button { margin-left: 5px; background: #075e54; color: white; border: none; border-radius: 50%; width: 40px; height: 45px; cursor: pointer; font-size: 1.2em; }
     </style>
 </head>
 <body>
-    <header>
-        <span>Messenger Group</span>
-        <div class="btns">
-            <div id="sound-btn" class="btn" onclick="activateAudio()">🔔 အသံဖွင့်</div>
-            <div class="btn" onclick="editName()">နာမည်ပြင်</div>
-        </div>
-    </header>
-    <div id="chat-box"></div>
-    <div class="input-area">
-        <div class="input-bar">
-            <div class="field-wrapper">
-                <input type="text" id="m" placeholder="စာရိုက်ပါ..." autocomplete="off">
-            </div>
-            <button id="send-btn">➤</button>
-        </div>
+    <div id="chat"></div>
+    <div class="input-box">
+        <input type="text" id="m" placeholder="စာရိုက်ပါ...">
+        <button id="s">➤</button>
     </div>
 
     <script type="module">
+        // Firebase SDK များကို ချိတ်ဆက်ခြင်း (လိပ်စာအမှန်များ)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // အစ်ကို့ရဲ့ Firebase Config အစစ်အမှန်
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -75,74 +38,41 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const chatBox = document.getElementById('chat-box');
-        const msgInput = document.getElementById('m');
-        const alertSound = new Audio("https://githubusercontent.com");
 
-        window.activateAudio = () => {
-            alertSound.play().then(() => {
-                alertSound.pause(); alertSound.currentTime = 0;
-                document.getElementById('sound-btn').style.background = "#4caf50";
-                document.getElementById('sound-btn').innerText = "🔊 ဖွင့်ပြီး";
-            });
-        };
-
-        window.editName = () => {
-            let n = prompt("နာမည်အသစ်:");
-            if (n && n.trim()) { localStorage.setItem("name", n.trim()); location.reload(); }
-        };
-
-        let user = localStorage.getItem("name") || prompt("သင့်နာမည်ပေးပါ:");
-        if (!user) user = "Guest" + Math.floor(Math.random() * 100);
+        // နာမည်တောင်းခြင်း (ပထမဆုံးတစ်ခါသာ)
+        let user = localStorage.getItem("name") || prompt("သင့်နာမည်လေး ပေးပါဦး:");
+        if (!user || user.trim() === "") user = "Guest" + Math.floor(Math.random() * 100);
         localStorage.setItem("name", user);
 
-        document.getElementById('send-btn').onclick = async () => {
-            const text = msgInput.value.trim();
-            if (text) {
-                msgInput.value = "";
-                await addDoc(collection(db, "messages"), { 
-                    u: user, 
-                    t: text, 
-                    time: serverTimestamp(), 
-                    seen: false 
-                });
+        // စာပို့သည့် Function
+        document.getElementById('s').onclick = async () => {
+            const i = document.getElementById('m');
+            if (i.value.trim() !== "") {
+                try {
+                    await addDoc(collection(db, "messages"), { 
+                        u: user, 
+                        t: i.value, 
+                        time: serverTimestamp() 
+                    });
+                    i.value = "";
+                } catch(e) {
+                    console.error("Error: ", e);
+                    alert("စာပို့မရပါ၊ Firestore Rules ကို စစ်ပေးပါ။");
+                }
             }
         };
 
-        let isFirstLoad = true;
-        onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
-            chatBox.innerHTML = "";
-            snap.forEach((snapDoc) => {
-                const d = snapDoc.data();
-                const isMe = d.u === user;
-
-                if (!isMe && d.seen === false) {
-                    updateDoc(doc(db, "messages", snapDoc.id), { seen: true });
-                }
-
-                let timeStr = d.time ? d.time.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
-                
-                const div = document.createElement("div");
-                div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
-                div.innerHTML = `
-                    <span class="user-name">${d.u}</span>
-                    <div>${d.t}</div>
-                    <div class="msg-info">
-                        <span class="msg-time">${timeStr}</span>
-                        <div class="ticks ${d.seen ? 'read' : 'sent'}">${d.seen ? '✓✓' : '✓'}</div>
-                    </div>
-                `;
-                chatBox.appendChild(div);
-
-                if (!isFirstLoad && !isMe && !snapDoc.metadata.hasPendingWrites) {
-                    alertSound.play().catch(e => {});
-                }
+        // စာများကို Realtime ဖတ်ပြခြင်း
+        const q = query(collection(db, "messages"), orderBy("time", "asc"));
+        onSnapshot(q, (snap) => {
+            const box = document.getElementById('chat');
+            box.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                box.innerHTML += `<div class="msg"><div class="user">${d.u}</div>${d.t}</div>`;
             });
-            isFirstLoad = false;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            box.scrollTop = box.scrollHeight;
         });
-
-        msgInput.onkeypress = (e) => { if(e.key === "Enter") document.getElementById('send-btn').click(); };
     </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Advanced Chat App</title>
+    <title>Chat App - Status & Toggle Heart</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -17,12 +17,13 @@
         .bubble { padding: 10px 15px; border-radius: 20px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 4px; }
         .other .bubble { background: #fff; border-top-left-radius: 4px; }
-        .meta { font-size: 11px; color: #888; margin-top: 4px; }
-        .heart-btn { 
-            background: white; border: 1px solid #ddd; border-radius: 20px; 
-            min-width: 50px; height: 32px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; margin: 0 8px; font-size: 14px; transition: 0.2s;
-        }
+        
+        /* Status & Meta Style */
+        .meta { font-size: 10px; color: #888; margin-top: 4px; display: flex; align-items: center; }
+        .status-tick { margin-right: 4px; font-weight: bold; font-size: 12px; }
+        .own .status-tick { color: #4caf50; } /* အစိမ်းရောင် */
+
+        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 20px; min-width: 50px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 8px; font-size: 14px; }
         .heart-btn.active { border-color: #ff5252; color: #ff5252; }
         .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; }
         input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
@@ -33,7 +34,7 @@
 
     <div class="top-bar">
         <div>👤 <span id="display-name">...</span></div>
-        <button onclick="changeName()" style="background:#128c7e; color:white; border:none; border-radius:5px; padding:5px;">နာမည်ပြောင်း</button>
+        <button onclick="changeName()" style="background:#128c7e; color:white; border:none; border-radius:5px; padding:5px; cursor:pointer;">နာမည်ပြောင်း</button>
     </div>
 
     <div id="chat"></div>
@@ -46,6 +47,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -67,11 +69,17 @@
             if(n) { localStorage.setItem("name", n); location.reload(); }
         };
 
+        // စာပို့ခြင်း (readBy ကို ပါတစ်ခါတည်း ထည့်သွင်းသိမ်းဆည်းမည်)
         document.getElementById('s').onclick = async () => {
             const i = document.getElementById('m');
             if (i.value.trim() !== "") {
-                // likes အစား likedBy array နဲ့ သိမ်းပါမယ်
-                await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likedBy: [] });
+                await addDoc(collection(db, "messages"), { 
+                    u: user, 
+                    t: i.value, 
+                    time: serverTimestamp(), 
+                    likedBy: [], 
+                    readBy: [user] // ပို့သူက ဖတ်ပြီးသားအဖြစ် စတင်မည်
+                });
                 i.value = "";
             }
         };
@@ -86,10 +94,20 @@
                 const isOwn = d.u === user;
                 const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
                 
-                // likedBy array ထဲမှာ ကိုယ့်နာမည် ပါမပါ စစ်မယ်
+                // Like Logic
                 const likedBy = d.likedBy || [];
                 const hasLiked = likedBy.includes(user);
-                const count = likedBy.length;
+                
+                // Status Tick Logic
+                const readBy = d.readBy || [];
+                // ပို့သူမဟုတ်တဲ့ တခြားသူ တစ်ယောက်ယောက် ဖတ်ပြီးရင် အမှန်ခြစ် ၂ ခုပြမယ်
+                const isReadByOthers = readBy.some(viewer => viewer !== d.u);
+                const ticks = isReadByOthers ? "✓✓" : "✓";
+
+                // ဖတ်ပြီးကြောင်း မှတ်သားခြင်း (ကိုယ့်စာမဟုတ်ရင် readBy ထဲ ကိုယ့်နာမည်ထည့်မယ်)
+                if (!isOwn && !readBy.includes(user)) {
+                    updateDoc(doc(db, "messages", id), { readBy: arrayUnion(user) });
+                }
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
@@ -97,10 +115,13 @@
                     <div class="content-box">
                         <div style="font-size:10px; color:#555; margin-bottom:2px;">${d.u}</div>
                         <div class="bubble">${d.t}</div>
-                        <div class="meta">${timeStr}</div>
+                        <div class="meta">
+                            ${isOwn ? `<span class="status-tick">${ticks}</span>` : ''}
+                            <span>${timeStr}</span>
+                        </div>
                     </div>
                     <button class="heart-btn ${hasLiked ? 'active' : ''}" onclick="toggleHeart('${id}', ${hasLiked})">
-                        ${hasLiked ? "❤️" : "🤍"} <span>${count}</span>
+                        ${hasLiked ? "❤️" : "🤍"} <span>${likedBy.length}</span>
                     </button>
                 `;
                 box.appendChild(msgDiv);
@@ -108,19 +129,12 @@
             box.scrollTop = box.scrollHeight;
         });
 
-        // Toggle Heart System (လူတစ်ယောက် တစ်ခါပဲ ပေးလို့ရအောင် လုပ်ထားသည်)
         window.toggleHeart = async (id, alreadyLiked) => {
             const msgRef = doc(db, "messages", id);
-            try {
-                if (alreadyLiked) {
-                    // Like ပေးပြီးသားဆိုရင် နာမည်ကို Array ထဲက ပြန်ထုတ်မယ်
-                    await updateDoc(msgRef, { likedBy: arrayRemove(user) });
-                } else {
-                    // Like မပေးရသေးရင် နာမည်ကို Array ထဲ ထည့်မယ်
-                    await updateDoc(msgRef, { likedBy: arrayUnion(user) });
-                }
-            } catch (e) {
-                console.error(e);
+            if (alreadyLiked) {
+                await updateDoc(msgRef, { likedBy: arrayRemove(user) });
+            } else {
+                await updateDoc(msgRef, { likedBy: arrayUnion(user) });
             }
         };
     </script>

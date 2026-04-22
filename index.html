@@ -3,35 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App Fix</title>
+    <title>Responsive Chat App</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        
+        /* Top Bar */
+        .top-bar { 
+            background: #075e54; color: white; padding: 10px 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+            position: fixed; top: 0; width: 100%; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .change-btn { background: #128c7e; color: white; border: 1px solid #fff; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
+
+        /* Chat Area */
         #chat { flex: 1; overflow-y: auto; padding: 65px 10px 80px 10px; display: flex; flex-direction: column; width: 100%; }
 
+        /* Message Layout */
         .msg-container { display: flex; align-items: center; margin-bottom: 15px; width: 100%; }
         .msg-container.own { flex-direction: row-reverse; }
         .msg-container.other { flex-direction: row; }
 
-        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; background: #fff; max-width: 70%; }
+        .bubble-wrap { display: flex; flex-direction: column; max-width: 70%; }
+        .own .bubble-wrap { align-items: flex-end; }
+
+        .bubble { padding: 8px 14px; border-radius: 18px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; line-height: 1.4; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 2px; }
         .other .bubble { background: #fff; border-top-left-radius: 2px; }
 
-        .heart-wrap { display: flex; flex-direction: column; align-items: center; margin: 0 10px; min-width: 35px; }
-        .heart-btn { background: white; border: 1px solid #ddd; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        /* Heart & Count UI */
+        .heart-wrap { display: flex; flex-direction: column; align-items: center; margin: 0 12px; min-width: 40px; }
+        .heart-btn { 
+            background: white; border: 1px solid #ddd; border-radius: 50%; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.2s;
+        }
+        .heart-btn:active { transform: scale(0.8); }
         .count-text { font-size: 11px; color: #666; margin-top: 2px; font-weight: bold; }
 
-        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; z-index: 1000; }
-        input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; font-size: 20px; }
+        .meta { font-size: 10px; color: #888; margin-top: 4px; padding: 0 5px; }
+
+        /* Input Section */
+        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; z-index: 1000; border-top: 1px solid #ddd; }
+        input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; font-size: 15px; }
+        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
         <div style="font-size: 14px;">👤 <span id="display-name">...</span></div>
-        <button onclick="changeName()" style="background:#128c7e; color:white; border:1px solid #fff; border-radius:10px; padding:4px 10px; font-size:11px;">နာမည်ပြောင်း</button>
+        <button class="change-btn" id="change-name-btn">နာမည်ပြောင်းရန်</button>
     </div>
 
     <div id="chat"></div>
@@ -44,8 +66,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // အစ်ကို့ရဲ့ Config Key များကို ဒီမှာ ထည့်ထားပါတယ်
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -58,22 +79,34 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Name Management
         let user = localStorage.getItem("name") || "ဧည့်သည်";
         document.getElementById('display-name').innerText = user;
 
-        window.changeName = () => {
-            const n = prompt("နာမည်အသစ်:", user);
-            if(n) { localStorage.setItem("name", n); location.reload(); }
-        };
-
-        document.getElementById('s').onclick = async () => {
-            const i = document.getElementById('m');
-            if (i.value.trim() !== "") {
-                await addDoc(collection(db, "messages"), { u: user, t: i.value, time: serverTimestamp(), likes: 0 });
-                i.value = "";
+        document.getElementById('change-name-btn').onclick = () => {
+            const n = prompt("နာမည်အသစ် ရိုက်ထည့်ပါ:", user);
+            if (n && n.trim() !== "") {
+                user = n;
+                localStorage.setItem("name", n);
+                document.getElementById('display-name').innerText = n;
+                location.reload(); 
             }
         };
 
+        // Send Message
+        document.getElementById('s').onclick = async () => {
+            const i = document.getElementById('m');
+            if (i.value.trim() !== "") {
+                try {
+                    await addDoc(collection(db, "messages"), { 
+                        u: user, t: i.value, time: serverTimestamp(), likes: 0 
+                    });
+                    i.value = "";
+                } catch(e) { console.error(e); }
+            }
+        };
+
+        // Realtime Read & Like Function
         const q = query(collection(db, "messages"), orderBy("time", "asc"));
         onSnapshot(q, (snap) => {
             const box = document.getElementById('chat');
@@ -82,31 +115,35 @@
                 const d = dDoc.data();
                 const id = dDoc.id;
                 const isOwn = d.u === user;
-                const count = d.likes || 0;
-                const heartIcon = (count > 0) ? "❤️" : "🤍";
+                const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
+                const likes = d.likes || 0;
+                const heartIcon = (likes > 0) ? "❤️" : "🤍";
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
                 msgDiv.innerHTML = `
                     <div class="heart-wrap">
                         <button class="heart-btn" id="btn-${id}">${heartIcon}</button>
-                        <span class="count-text">${count}</span>
+                        <span class="count-text">${likes}</span>
                     </div>
-                    <div class="bubble">${d.t}</div>
+                    <div class="bubble-wrap">
+                        <div style="font-size:10px; color:#555; margin-bottom:2px; padding:0 5px;">${d.u}</div>
+                        <div class="bubble">${d.t}</div>
+                        <div class="meta">${timeStr}</div>
+                    </div>
                 `;
                 box.appendChild(msgDiv);
-document.getElementById(`btn-${id}`).onclick = async () => {
-    try {
-        const msgRef = doc(db, "messages", id);
-        await updateDoc(msgRef, { 
-            likes: increment(1) 
-        });
-        console.log("Like updated!");
-    } catch (e) {
-        console.error("Error updating likes: ", e);
-        alert("အသည်းပေးလို့မရပါ - Rules ကို စစ်ဆေးပါ");
-    }
-};
+
+                // Like Functionality
+                document.getElementById(`btn-${id}`).onclick = async () => {
+                    try {
+                        const msgRef = doc(db, "messages", id);
+                        await updateDoc(msgRef, { likes: increment(1) });
+                    } catch (e) {
+                        alert("Error: Firebase Rules ကို Publish လုပ်ထားဖို့ လိုအပ်ပါတယ်။");
+                    }
+                };
+            });
             box.scrollTop = box.scrollHeight;
         });
     </script>

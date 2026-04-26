@@ -54,6 +54,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const FIXED_IMG = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhZyEN60GGQ1q2nHs55YkoF2tesvV9xgpvc2HYVktG5PhVLvHQSwKAmaHIE6BL0EBJH1HQ3ggUVw2ABI18_u6fap_Ex5JpzR_nAyebTl2u7OFLSDWtAocM_wRmNtnOAv1iRz99s9lURg_llcWrofEk9dWCjqakbXWWKpY04OhvHFQ0GvFAhBJE7ENs_lcM/s740/1000008702.jpg";
         const IMG = "https://googleusercontent.com";
 
         let user = localStorage.getItem("name") || "User_" + Math.floor(Math.random() * 1000);

@@ -3,81 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App - Custom Icon</title>
+    <title>Chat App - Complete</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; margin: 0; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1000; height: 50px; }
-        #chat { flex: 1; overflow-y: auto; padding: 60px 10px 80px 10px; display: flex; flex-direction: column; }
-        
-        .p-img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: #ddd; vertical-align: middle; }
-        .msg-p-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-bottom: 2px; }
-
+        .top-bar { background: #075e54; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; z-index: 1001; height: 50px; }
+        .status-bar { background: #075e54; padding: 10px 5px; display: flex; gap: 12px; overflow-x: auto; position: fixed; top: 50px; width: 100%; z-index: 1000; border-top: 1px solid #128c7e; height: 100px; align-items: center; }
+        .status-user { display: flex; flex-direction: column; align-items: center; min-width: 65px; color: white; }
+        .p-wrap { position: relative; width: 50px; height: 50px; }
+        .status-p-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc; padding: 2px; }
+        .active-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #2ecc71; border-radius: 50%; border: 2px solid #075e54; }
+        .status-name { font-size: 11px; margin-top: 5px; text-align: center; width: 65px; overflow: hidden; text-overflow: ellipsis; }
+        #chat { flex: 1; overflow-y: auto; padding: 160px 10px 80px 10px; display: flex; flex-direction: column; }
         .msg-container { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; }
         .msg-container.own { align-self: flex-end; align-items: flex-end; }
         .msg-container.other { align-self: flex-start; align-items: flex-start; }
-
         .bubble-row { display: flex; align-items: center; gap: 8px; width: 100%; }
         .own .bubble-row { flex-direction: row-reverse; }
-
         .bubble { padding: 10px 15px; border-radius: 20px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
         .own .bubble { background: #dcf8c6; border-top-right-radius: 4px; }
         .other .bubble { background: #fff; border-top-left-radius: 4px; }
-
-        .meta { font-size: 10px; color: #888; margin-top: 4px; display: flex; align-items: center; }
-        .status-tick { color: #2ecc71; font-weight: bold; font-size: 13px; letter-spacing: -4px; margin-right: 8px; }
-
         .heart-btn { background: white; border: 1px solid #ddd; border-radius: 15px; padding: 3px 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); flex-shrink: 0; }
         .heart-btn.active { border-color: #ff5252; color: #ff5252; }
-
-        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; }
+        .input-area { position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 10px; display: flex; align-items: center; z-index: 1001; }
         input#m { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        /* Modal Styling (နာမည်ပြင်ရန်သာ) */
-        #customModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-card { background: white; width: 90%; max-width: 320px; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; }
-        .modal-p-wrap { width: 80px; height: 80px; margin: 0 auto 20px; }
-        .modal-p-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #075e54; }
-        .modal-input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #eee; border-radius: 10px; outline: none; background: #f9f9f9; }
+        button#s { margin-left: 10px; background: #075e54; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div class="top-bar">
-        <div>
-            <!-- ပုံနေရာမှာ သင်ပို့ထားတဲ့ Icon Link ကို တိုက်ရိုက်ထည့်ထားပါတယ် -->
-            <img id="top-p-img" src="https://ibb.co" class="p-img">
-            <span id="display-name" style="margin-left: 5px;">...</span>
-        </div>
-        <button onclick="editProfile()" style="background:#128c7e; color:white; border:none; border-radius:5px; padding:5px 10px; cursor:pointer;">ပြုပြင်ရန်</button>
+        <div><img id="top-p-img" src="" style="width:30px;height:30px;border-radius:50%"> <span id="display-name" style="font-weight:bold">...</span></div>
+        <button onclick="editProfile()" style="background:#128c7e;color:white;border:none;padding:5px 10px;border-radius:5px">ပြုပြင်ရန်</button>
     </div>
-
+    <div class="status-bar" id="status-bar"></div>
     <div id="chat"></div>
-
-    <div class="input-area">
-        <input type="text" id="m" placeholder="စာရိုက်ပါ..." autocomplete="off">
-        <button id="s">➤</button>
-    </div>
-
-    <!-- Modal Box (နာမည်တစ်ခုတည်း ပြင်ရန်) -->
-    <div id="customModal">
-        <div class="modal-card">
-            <h3 style="margin:0 0 20px; color:#075e54; font-size:18px;">နာမည်ပြုပြင်ရန်</h3>
-            <div class="modal-p-wrap">
-                <img src="https://ibb.co" class="modal-p-img">
-            </div>
-            <input type="text" id="modalName" class="modal-input" placeholder="နာမည်အသစ် ရိုက်ထည့်ပါ...">
-            <div style="display:flex; justify-content:flex-end; gap:15px;">
-                <button onclick="closeModal()" style="background:none; border:none; color:#777; font-weight:bold; cursor:pointer;">CANCEL</button>
-                <button id="saveBtn" style="background:#075e54; border:none; color:white; padding:10px 25px; border-radius:10px; font-weight:bold; cursor:pointer;">OK</button>
-            </div>
-        </div>
-    </div>
+    <div class="input-area"><input type="text" id="m" placeholder="စာရိုက်ပါ..." autocomplete="off"><button id="s">➤</button></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, query, orderBy, onSnapshot, serverTimestamp, limit, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyODqLsXhGPKN-Oohja-hs7v63ZfrIPufU8",
             authDomain: "://firebaseapp.com",
@@ -89,85 +54,67 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // အမြဲသုံးမည့် ပုံ Link (သင်ပေးထားသောပုံ)
-        const FIXED_IMG = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhZyEN60GGQ1q2nHs55YkoF2tesvV9xgpvc2HYVktG5PhVLvHQSwKAmaHIE6BL0EBJH1HQ3ggUVw2ABI18_u6fap_Ex5JpzR_nAyebTl2u7OFLSDWtAocM_wRmNtnOAv1iRz99s9lURg_llcWrofEk9dWCjqakbXWWKpY04OhvHFQ0GvFAhBJE7ENs_lcM/s740/1000008702.jpg";
+        const IMG = "https://googleusercontent.com";
 
         let user = localStorage.getItem("name") || "User_" + Math.floor(Math.random() * 1000);
         document.getElementById('display-name').innerText = user;
-        document.getElementById('top-p-img').src = FIXED_IMG;
+        document.getElementById('top-p-img').src = IMG;
 
-        window.editProfile = () => {
-            document.getElementById('modalName').value = user;
-            document.getElementById('customModal').style.display = 'flex';
+        const updatePresence = async () => {
+            await setDoc(doc(db, "presence", user), { u: user, img: IMG, time: serverTimestamp() }, { merge: true });
         };
+        updatePresence();
+        setInterval(updatePresence, 30000);
 
-        window.closeModal = () => {
-            document.getElementById('customModal').style.display = 'none';
-        };
-
-        document.getElementById('saveBtn').onclick = () => {
-            const n = document.getElementById('modalName').value;
-            if(n.trim() !== "") {
-                localStorage.setItem("name", n);
-                location.reload();
-            }
-        };
+        onSnapshot(query(collection(db, "presence"), orderBy("time", "desc"), limit(10)), (snap) => {
+            const sBar = document.getElementById('status-bar');
+            sBar.innerHTML = "";
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
+                if (!d.time) return;
+                const diff = Math.floor((new Date().getTime() - d.time.toDate().getTime()) / 60000);
+                const active = diff < 5;
+                sBar.innerHTML += `<div class="status-user"><div class="p-wrap"><img src="${d.img}" class="status-p-img" style="border-color:${active?'#2ecc71':'#ccc'}">${active?'<div class="active-dot"></div>':''}</div><div class="status-name">${d.u}</div><div style="font-size:9px;opacity:0.8">${active?'Active now':diff+'m ago'}</div></div>`;
+            });
+        });
 
         document.getElementById('s').onclick = async () => {
             const i = document.getElementById('m');
-            if (i.value.trim() !== "") {
-                await addDoc(collection(db, "messages"), { 
-                    u: user, img: FIXED_IMG, t: i.value, time: serverTimestamp(), likedBy: [], readBy: [user] 
-                });
-                i.value = "";
+            if (i.value.trim()) {
+                const text = i.value; i.value = "";
+                await addDoc(collection(db, "messages"), { u: user, img: IMG, t: text, time: serverTimestamp(), likedBy: [] });
+                updatePresence();
             }
         };
 
-        const q = query(collection(db, "messages"), orderBy("time", "asc"));
-        onSnapshot(q, (snap) => {
+        onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
             const box = document.getElementById('chat');
             box.innerHTML = "";
-            snap.forEach((dDoc) => {
-                const d = dDoc.data();
-                const id = dDoc.id;
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
                 const isOwn = d.u === user;
-                const timeStr = d.time ? d.time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
                 const likedBy = d.likedBy || [];
                 const hasLiked = likedBy.includes(user);
-                const readBy = d.readBy || [];
-                const isRead = readBy.some(v => v !== d.u);
-
-                if (!isOwn && !readBy.includes(user)) {
-                    updateDoc(doc(db, "messages", id), { readBy: arrayUnion(user) });
-                }
-
-                const msgDiv = document.createElement('div');
-                msgDiv.className = `msg-container ${isOwn ? 'own' : 'other'}`;
-                msgDiv.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
-                        <img src="${FIXED_IMG}" class="msg-p-img">
-                        <span style="font-size:10px; color:#555;">${d.u}</span>
-                    </div>
-                    <div class="bubble-row">
-                        <div class="bubble">${d.t}</div>
-                        <button class="heart-btn ${hasLiked ? 'active' : ''}" onclick="toggleHeart('${id}', ${hasLiked})">
-                            ${hasLiked ? "❤️" : "🤍"} <span>${likedBy.length || ''}</span>
-                        </button>
-                    </div>
-                    <div class="meta">
-                        ${isOwn ? `<span class="status-tick">${isRead ? '✓✓' : '✓'}</span>` : ''}
-                        <span>${timeStr}</span>
-                    </div>
-                `;
-                box.appendChild(msgDiv);
+                box.innerHTML += `
+                    <div class="msg-container ${isOwn ? 'own' : 'other'}">
+                        <div class="bubble-row">
+                            <img src="${d.img}" style="width:30px;height:30px;border-radius:50%">
+                            <div class="bubble">${d.t}</div>
+                            <button class="heart-btn ${hasLiked ? 'active' : ''}" onclick="toggleLike('${docSnap.id}', ${hasLiked})">❤️ <span>${likedBy.length}</span></button>
+                        </div>
+                        <div style="font-size:10px;color:#888;margin-top:4px">${isOwn?'✓✓ ':''}${d.u} • ${d.time?d.time.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'...'}</div>
+                    </div>`;
             });
             box.scrollTop = box.scrollHeight;
         });
 
-        window.toggleHeart = async (id, alreadyLiked) => {
-            const msgRef = doc(db, "messages", id);
-            alreadyLiked ? await updateDoc(msgRef, { likedBy: arrayRemove(user) }) : await updateDoc(msgRef, { likedBy: arrayUnion(user) });
+        window.toggleLike = async (id, hasLiked) => {
+            await updateDoc(doc(db, "messages", id), { likedBy: hasLiked ? arrayRemove(user) : arrayUnion(user) });
+        };
+
+        window.editProfile = () => {
+            const n = prompt("နာမည်အသစ်:", user);
+            if(n) { localStorage.setItem("name", n); location.reload(); }
         };
     </script>
 </body>

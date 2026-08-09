@@ -172,39 +172,3 @@
     </script>
 </body>
 </html>
-                const d = docSnap.data(); const id = docSnap.id;
-                const isOwn = d.u === user;
-                const readBy = d.readBy || [];
-                const likedBy = d.likedBy || [];
-                const isRead = readBy.some(n => n !== d.u);
-                const hasLiked = likedBy.includes(user);
-
-                if (!isOwn && !readBy.includes(user)) updateDoc(doc(db, "messages", id), { readBy: arrayUnion(user) });
-
-                box.innerHTML += `
-                    <div class="msg-container ${isOwn ? 'own' : 'other'}">
-                        <div class="bubble-row">
-                            <img src="${d.img}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">
-                            <div class="bubble">${d.t}</div>
-                            <button class="heart-btn ${hasLiked ? 'active' : ''}" onclick="toggleLike('${id}', ${hasLiked})">❤️ ${likedBy.length}</button>
-                        </div>
-                        <div class="meta">
-                            ${isOwn ? `<span class="status-tick ${isRead?'tick-read':'tick-sent'}">${isRead?'✓✓':'✓'}</span>` : ''}
-                            ${d.u} • ${d.time ? d.time.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '...'}
-                        </div>
-                    </div>`;
-            });
-            box.scrollTop = box.scrollHeight;
-        });
-
-        window.toggleLike = async (id, liked) => {
-            await updateDoc(doc(db, "messages", id), { likedBy: liked ? arrayRemove(user) : arrayUnion(user) });
-        };
-
-        window.editProfile = () => {
-            const n = prompt("နာမည်အသစ်ရိုက်ပါ:", user);
-            if(n && n.trim()) { localStorage.setItem("name", n.trim()); location.reload(); }
-        };
-    </script>
-</body>
-</html>
